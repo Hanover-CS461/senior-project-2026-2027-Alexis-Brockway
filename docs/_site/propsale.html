@@ -1,0 +1,363 @@
+<h1 id="a-custom-submission-manager-for-a-college-literary-magazine">A Custom Submission Manager for a College Literary Magazine</h1>
+
+<p>This project replaces the college literary magazine’s paid submission platform, Submittable, with a custom, club-scoped web application that runs the journal’s entire editorial workflow — submission intake, blind review, reader notes, and decision letters — at nearly zero cost.</p>
+
+<p>The magazine is a small student-run publication that currently processes all submissions through Submittable, a general-purpose platform whose annual price has become hard to justify for a club-sized budget [1][6]. The club’s workflow is small and stable: roughly 200–300 submissions per reading period (August to February), about 20 staff members at a time, and the club actually uses only a handful of the platform’s features. This project builds a tool around exactly what the club does and nothing else. Beyond cost, the project solves a second problem that is invisible until it hurts: the club’s submission archive currently lives inside a third-party system, and when a subscription ends, access to years of editorial history ends with it [2]. A tool the club operates itself, with its own database and backups, guarantees that the journal’s history outlives any vendor relationship.</p>
+
+<h2 id="why-this-project-exists">Why This Project Exists</h2>
+
+<p>Three problems motivate the project: cost, fit, and ownership.</p>
+
+<p><strong>Cost.</strong> Submittable charges CLMP-member magazines $290 per year, plus a $0.99 processing fee and a 5% charge on any paid submission [1][6]. For a college club running on a student-activities budget, several hundred dollars a year for software is a real line item, and per-transaction fees quietly multiply across every submission [2].</p>
+
+<p><strong>Fit.</strong> The magazine uses a small fraction of Submittable’s surface area. Submittable is built to serve contests, grants, and corporate programs; the club clicks a few features — a submission form, a queue, statuses, and letters — and pays for the rest [1].</p>
+
+<p><strong>Ownership.</strong> Every submission, note, and decision the club has made lives in a proprietary system. Exporting requires the platform’s cooperation, and when the subscription ends, the archive is no longer the club’s to open [2]. A tool with its own database and backups returns that archive to the club.</p>
+
+<h2 id="comparable-solutions">Comparable Solutions</h2>
+
+<p>Four existing systems are worth contrasting with the proposed project.</p>
+
+<p><strong>Submittable</strong> is the incumbent being replaced [1]. It offers intake forms, team roles, blind-read options, statuses, and automated letters. The differences are cost ($290/year even discounted, plus per-transaction fees), generality (features for contests and grants the club never touches), and ownership (the club’s archive is held by a vendor it does not control) [1][2].</p>
+
+<p><strong>Duosuma</strong>, by Duotrope, charges publishers per submission rather than per month — roughly $0.09 per submission, billed monthly, with volume discounts [3]. It is affordable, but the club still pays forever per submission, the workflow is Duotrope’s rather than the club’s, and the journal’s data remains on a third-party service [3].</p>
+
+<p><strong>Moksha</strong> is a hosted system used by major genre magazines [4]. It offers customizable workflows and a “permanent archive” — permanent, that is, while the subscription runs. Its annual plan costs $750, more than Submittable’s discounted rate, and it is closed software hosted under moksha.io [4].</p>
+
+<p><strong>Green Submissions</strong> is the strongest “do nothing” alternative: free, self-hosted submission software that installs on ordinary shared hosting [5]. It proves the club could avoid building anything. It is PHP/MySQL software from a single author, cannot be customized to the club’s exact workflow without forking it, and offers no learning value for a computer-science senior project [5].</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Aspect</th>
+      <th>This project</th>
+      <th>Submittable</th>
+      <th>Duosuma</th>
+      <th>Moksha</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Cost model</td>
+      <td>~$0 (free tiers)</td>
+      <td>~$290/yr + fees [1]</td>
+      <td>~$0.09/submission [3]</td>
+      <td>~$750/yr [4]</td>
+    </tr>
+    <tr>
+      <td>Scoped to this club’s workflow</td>
+      <td>Yes, by design</td>
+      <td>No</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Club controls its data</td>
+      <td>Yes</td>
+      <td>No</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Blind review enforced at the data layer</td>
+      <td>Yes</td>
+      <td>Configurable [1]</td>
+      <td>Configurable [3]</td>
+      <td>Configurable [4]</td>
+    </tr>
+    <tr>
+      <td>Maintenance burden</td>
+      <td>Student-built, documented</td>
+      <td>Vendor</td>
+      <td>Vendor</td>
+      <td>Vendor</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The proposed project differs from all four in the same ways: it is built to the club’s exact workflow rather than a general template; it costs nothing beyond free-tier hosting; and it keeps the archive in a database the club controls and can export at any time.</p>
+
+<h2 id="who-uses-the-system">Who Uses the System</h2>
+
+<p>The system has three roles, with one non-negotiable constraint: readers must never see author identity.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Role</th>
+      <th>Who holds it</th>
+      <th>Sees author identity?</th>
+      <th>System powers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Managing Editor</td>
+      <td>2 co-editors-in-chief + advisor</td>
+      <td>Yes — full view</td>
+      <td>Everything: review workflow + admin</td>
+    </tr>
+    <tr>
+      <td>Reader</td>
+      <td>Club members who review</td>
+      <td>No — blind</td>
+      <td>Review only; can invite other readers</td>
+    </tr>
+    <tr>
+      <td>Submitter</td>
+      <td>External writers</td>
+      <td>n/a</td>
+      <td>Submission form + status tracking</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Security rule:</strong> only the Managing Editor role can manage members or change roles; if a Reader could promote themselves, blind review would be meaningless. Every change is recorded in the audit log.</p>
+
+<h2 id="features-by-role">Features by Role</h2>
+
+<p><strong>For submitters (writers, not staff):</strong></p>
+<ul>
+  <li>Public submission form — genre, title, manuscript upload, and author details (name, email, bio) that readers never see.</li>
+  <li>Confirmation and status tracking via an emailed link; no writer accounts.</li>
+  <li>Withdrawal of a submission.</li>
+</ul>
+
+<p><strong>For managing editors:</strong></p>
+<ul>
+  <li>Full-view queue with an author column.</li>
+  <li>Assignment of submissions to specific readers.</li>
+  <li>Per-reader notes and internal discussion on a piece.</li>
+  <li>Configurable status stages: Received → In review → Shortlist → Accepted/Rejected.</li>
+  <li>Decision letters from the journal’s templates, signed by the journal — never by an individual reader.</li>
+  <li>Editor-submission conflict flag when a club member submits their own work.</li>
+  <li>Member management: invite, change roles, deactivate (history preserved).</li>
+  <li>CSV export, full backup, searchable archive, and audit log.</li>
+</ul>
+
+<p><strong>For readers (blind):</strong></p>
+<ul>
+  <li>Queue of assigned and shared submissions showing only title, genre, and manuscript.</li>
+  <li>Private attributed notes and discussion.</li>
+  <li>Invite other readers — but never grant full view.</li>
+</ul>
+
+<p><strong>Blind review, enforced by the system:</strong> author identity is stored in a separate table and structurally excluded from every reader-facing query by database security rules — not merely hidden in the UI. Uploaded files are scrubbed of author metadata at intake. Letters never carry reader names.</p>
+
+<h2 id="architecture">Architecture</h2>
+
+<p>The system is a single frontend application talking to one backend service (Supabase), with one small serverless function for sending email and one email provider. The logical pieces and their connections:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Writers                        Staff (editors + readers)
+      │  public form                   │  login → per-user token
+      ▼                                ▼
+  ┌─────────────────────────────────────────────────┐
+  │             React + Vite frontend               │
+  │      (static files on a free host)              │
+  └──────┬──────────────────────────────┬───────────┘
+         │ reads/writes with token      │ manuscript uploads
+         ▼                              ▼
+  ┌──────────────────────────────────────────────┐
+  │                  Supabase                    │
+  │  Auth ──▶ logins and sessions                │
+  │  PostgreSQL ──▶ submissions, notes,          │
+  │                  audit log; authors table    │
+  │                  unreachable by reader role  │
+  │                  (row-level security)        │
+  │  Storage ──▶ manuscript files                │
+  │  Edge Function ──▶ sends the emails          │
+  └──────────────┬───────────────────────────────┘
+                 │  trigger: new submission / decision
+                 ▼
+          ┌───────────────┐
+          │    Resend     │
+          │  (email)      │──▶ status links and letters
+          └───────────────┘
+</code></pre></div></div>
+
+<p>The frontend is deliberately thin: it displays pages and sends requests. The database decides what each request may see. The frontend connects to Supabase with a public “anon” key that merely opens the connection and grants nothing by itself — all real permissions come from the per-user token described next. Supabase Auth issues each staff member a token (an “ID card” stating their role), and every request carries it; Supabase’s row-level security (RLS) policies check the token and return only what the role permits [7]. The reader role has no policy that can read the authors table — so author identity is structurally absent from reader-accessible data, not just hidden in the interface. The only server-side code in the project is a single Supabase Edge Function that triggers email on submission and on decisions [7].</p>
+
+<h2 id="technology-choices-and-alternatives">Technology Choices and Alternatives</h2>
+
+<p>The table below lists every need and the choice made, including the libraries used so nothing is hand-rolled.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Need</th>
+      <th>Choice</th>
+      <th>Alternatives considered</th>
+      <th>Why this choice</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Frontend framework</td>
+      <td>React + Vite [8][9]</td>
+      <td>Next.js; SvelteKit; plain HTML</td>
+      <td>One familiar language (JavaScript/TypeScript); static hosting; no server-side rendering needed for a login-gated app</td>
+    </tr>
+    <tr>
+      <td>Forms &amp; validation</td>
+      <td>React Hook Form + Zod</td>
+      <td>Hand-rolled validation</td>
+      <td>Declarative, type-safe validation shared between client and server</td>
+    </tr>
+    <tr>
+      <td>Backend service</td>
+      <td>Supabase: Postgres + Auth + Storage + Edge Functions [7]</td>
+      <td>Hand-rolled Express/Django backend; Firebase; PocketBase</td>
+      <td>Provides database, logins, file storage, and serverless functions in one free service — no server to administer</td>
+    </tr>
+    <tr>
+      <td>Database access</td>
+      <td>Supabase client (@supabase/supabase-js)</td>
+      <td>Prisma ORM</td>
+      <td>Keeps row-level security intact; Prisma’s direct connection bypasses RLS</td>
+    </tr>
+    <tr>
+      <td>Database</td>
+      <td>PostgreSQL via Supabase [7]</td>
+      <td>SQLite; MongoDB</td>
+      <td>RLS is the mechanism that enforces blind review; Postgres is required for it</td>
+    </tr>
+    <tr>
+      <td>File storage</td>
+      <td>Supabase Storage [7]</td>
+      <td>AWS S3; server filesystem</td>
+      <td>Co-located with the database; free tier; files stay with the data</td>
+    </tr>
+    <tr>
+      <td>Email</td>
+      <td>Resend [10]</td>
+      <td>SendGrid; Mailgun; nodemailer + SMTP</td>
+      <td>Simple API and free tier far above a club’s volume</td>
+    </tr>
+    <tr>
+      <td>Metadata stripping</td>
+      <td><code class="language-plaintext highlighter-rouge">exifr</code> (images), <code class="language-plaintext highlighter-rouge">pdf-lib</code> (PDFs), zip-based <code class="language-plaintext highlighter-rouge">.docx</code> handling</td>
+      <td>Skipping the step</td>
+      <td>Prevents a writer’s name from leaking through file properties</td>
+    </tr>
+    <tr>
+      <td>Testing</td>
+      <td>Vitest + Playwright</td>
+      <td>Jest; no tests</td>
+      <td>Unit tests for business rules; end-to-end tests for submit → review → decide</td>
+    </tr>
+    <tr>
+      <td>Hosting</td>
+      <td>Free static host (Netlify or Vercel)</td>
+      <td>Self-hosted VPS</td>
+      <td>Free; static files need no server</td>
+    </tr>
+    <tr>
+      <td>Proposal delivery</td>
+      <td>GitHub Pages [12]</td>
+      <td>—</td>
+      <td>Course deliverable</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The framework decision deserves explicit defense. A plain React + Vite single-page app was chosen over Next.js because this application sits behind a login: the main advantages of server-rendering — fast first page loads and search-engine visibility — do not matter for roughly 20 logged-in staff, while the added machinery of Next.js costs learning time and future maintenance [8][9]. Django was rejected despite being a fine framework because the coursework background is JavaScript-based and because Django’s admin panel overlaps with what Supabase already provides. A hand-rolled Express backend was rejected because it would require operating a server and re-implementing authentication, storage, and security — work Supabase does natively, with RLS as a genuine data-layer security mechanism rather than a convention in application code [7]. Resend was chosen over self-hosted SMTP because transactional email deliverability (SPF/DKIM records, spam placement) is a solved problem better delegated to a specialist service [10].</p>
+
+<p>Security work throughout follows the OWASP Top 10 as a checklist, with “broken access control” treated as the project’s primary risk, because the entire product is a permission boundary [11].</p>
+
+<h2 id="new-concepts-and-technologies-to-learn">New Concepts and Technologies to Learn</h2>
+
+<p>Given a background of core computer-science coursework — data structures, algorithms, and an introduction to web programming, with limited exposure to production systems — the following are anticipated learning items rather than existing strengths:</p>
+
+<ul>
+  <li><strong>Row-level security (RLS) policy design.</strong> Writing SQL policies that enforce role-based access in the database itself; this is the project’s central security problem and its main new concept [7].</li>
+  <li><strong>Authentication and session patterns.</strong> Supabase Auth, tokens, refresh behavior, and protecting routes so blind review cannot be bypassed by calling the database directly [7].</li>
+  <li><strong>File upload handling and sanitization.</strong> Size limits, safe storage, and stripping personally identifying metadata — including the <code class="language-plaintext highlighter-rouge">.docx</code> format, a zip archive with author data inside.</li>
+  <li><strong>Static deployment.</strong> Building a Vite app and deploying it to a free static host, plus environment configuration.</li>
+  <li><strong>Transactional email and deliverability.</strong> SPF/DKIM records, domain verification, and why email from free tiers lands in spam without them [10].</li>
+  <li><strong>Automated testing.</strong> Unit tests for decision logic and end-to-end tests for the main user journeys, which double as living documentation for the club after the project ends.</li>
+</ul>
+
+<h2 id="timeline">Timeline</h2>
+
+<p>The project runs from late August to mid-December 2026 (roughly twelve weeks of build time, accounting for finals).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Weeks</th>
+      <th>Work</th>
+      <th>Deliverable</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1–2</td>
+      <td>Interview the club on their actual Submittable usage; learn Supabase/RLS basics; scaffold</td>
+      <td>Agreed feature scope; running scaffold</td>
+    </tr>
+    <tr>
+      <td>3–4</td>
+      <td>Supabase Auth, roles, member management; public submission form with upload and metadata stripping</td>
+      <td>A writer can submit and get a status link</td>
+    </tr>
+    <tr>
+      <td>5–7</td>
+      <td>Reader and editor workflow: queues, assignment, notes, discussion, statuses</td>
+      <td>Editors can run a review cycle end to end</td>
+    </tr>
+    <tr>
+      <td>8–9</td>
+      <td>Resend integration, decision-letter templates, conflict detection, audit log</td>
+      <td>Decisions go out signed by the journal</td>
+    </tr>
+    <tr>
+      <td>10–11</td>
+      <td>Hardening: blind-review audit, backup/export script, automated tests; deploy</td>
+      <td>Production deployment</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>Dry-run pilot with the club; handoff document; final report</td>
+      <td>Pilot feedback; documentation</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="risks-and-mitigations">Risks and Mitigations</h2>
+
+<ul>
+  <li><strong>Access to the club’s domain account.</strong> If the login is held by a former student, the pilot runs on a cloud URL and domain polish is deferred; the core system does not depend on it.</li>
+  <li><strong>Maintenance after graduation.</strong> Mitigated by design: few services, audit log, export/backup, and a written handoff guide. Every record is exportable, so the club is never trapped in the tool.</li>
+  <li><strong>Scope growth.</strong> The single biggest risk. Controlled by the up-front club interview (features they actually click, features they never touch) and by the explicit decision to build for one club, not a platform [2].</li>
+  <li><strong>Supabase free-tier pause.</strong> Free projects pause after about a week of inactivity; the handoff guide documents the one-step reactivation ritual before each reading period.</li>
+</ul>
+
+<h2 id="what-the-club-is-left-with">What the Club Is Left With</h2>
+
+<p>After the project ends, the club receives working software that runs its exact workflow at no cost; its own database and files with backup and export; a plain-language handoff guide covering daily use, backup, and reactivation; and a codebase simple enough — one frontend, one backend service, one email provider — that a future club member can maintain it.</p>
+
+<h2 id="references">References</h2>
+
+<p>[1] Submittable, “How can my literary organization receive a discounted CLMP plan?,” Submittable Help Center, Jan. 14, 2022. [Online]. Available: https://submittable.help/en/articles/3512930-how-can-my-literary-organization-receive-a-discounted-clmp-plan. [Accessed: Sep. 8, 2026].</p>
+
+<p>[2] G. Lyvers, “What Submittable actually costs a small literary magazine,” Green Submissions, Jul. 11, 2026. [Online]. Available: https://www.greensubmissions.com/articles/what-submittable-costs.html. [Accessed: Sep. 8, 2026].</p>
+
+<p>[3] Duotrope, “Duosuma: Overview for Publishers and Agents,” Duotrope. [Online]. Available: https://duotrope.com/duosuma/overview-publishers-agents.aspx. [Accessed: Sep. 8, 2026].</p>
+
+<p>[4] Moksha, “Pricing — The Moksha Submissions System,” Moksha. [Online]. Available: https://moksha.io/pricing/. [Accessed: Sep. 8, 2026].</p>
+
+<p>[5] G. Lyvers, “Free Submittable alternatives for literary magazines (2026),” Green Submissions, Jul. 11, 2026. [Online]. Available: https://www.greensubmissions.com/articles/free-submittable-alternatives.html. [Accessed: Sep. 8, 2026].</p>
+
+<p>[6] Community of Literary Magazines and Presses, “Benefits,” CLMP. [Online]. Available: https://www.clmp.org/join-clmp/benefits/. [Accessed: Sep. 8, 2026].</p>
+
+<p>[7] Supabase, “Supabase Documentation,” Supabase. [Online]. Available: https://supabase.com/docs. [Accessed: Sep. 8, 2026].</p>
+
+<p>[8] Vite, “Vite Documentation,” Vite. [Online]. Available: https://vite.dev. [Accessed: Sep. 8, 2026].</p>
+
+<p>[9] React, “React Documentation,” React. [Online]. Available: https://react.dev. [Accessed: Sep. 8, 2026].</p>
+
+<p>[10] Resend, “Resend Documentation,” Resend. [Online]. Available: https://resend.com/docs. [Accessed: Sep. 8, 2026].</p>
+
+<p>[11] OWASP Foundation, “OWASP Top 10: 2021,” OWASP. [Online]. Available: https://owasp.org/Top10/. [Accessed: Sep. 8, 2026].</p>
+
+<p>[12] GitHub, “GitHub Pages Documentation,” GitHub. [Online]. Available: https://docs.github.com/en/pages. [Accessed: Sep. 8, 2026].</p>
