@@ -1,3 +1,5 @@
+---
+---
 Three roles — Managing Editor (the 2 co-EiCs + advisor, full view of author identities + all admin powers), Reader (blind), and Submitter (writers, not app users).
 By role:
 - Submitters — submission form, emailed status tracking, withdraw.

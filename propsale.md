@@ -1,3 +1,5 @@
+---
+---
 # A Custom Submission Manager for a College Literary Magazine
 
 This project replaces the college literary magazine's paid submission platform, Submittable, with a custom, club-scoped web application that runs the journal's entire editorial workflow — submission intake, blind review, reader notes, and decision letters — at nearly zero cost.
