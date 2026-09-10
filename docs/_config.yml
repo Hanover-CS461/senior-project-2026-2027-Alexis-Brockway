@@ -1,0 +1,5 @@
+remote_theme: pages-themes/cayman
+title: Senior Project Proposal
+description: A Custom Submission Manager for a College Literary Magazine
+plugins:
+  - jekyll-remote-theme
