@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Senior Project Proposal | A Custom Submission Manager for a College Literary Magazine</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Senior Project Proposal" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A Custom Submission Manager for a College Literary Magazine" />
+<meta property="og:description" content="A Custom Submission Manager for a College Literary Magazine" />
+<link rel="canonical" href="http://localhost:4000/features.html" />
+<meta property="og:url" content="http://localhost:4000/features.html" />
+<meta property="og:site_name" content="Senior Project Proposal" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Senior Project Proposal" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A Custom Submission Manager for a College Literary Magazine","headline":"Senior Project Proposal","url":"http://localhost:4000/features.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/assets/css/style.css?v=e82dc7c3d894bca23854f08254638101412707f9">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+    <style>
+      .site-nav {
+        background: #0f6e6e;
+        padding: 0.6rem 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+      }
+      .site-nav a {
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.95rem;
+      }
+      .site-nav a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+
+    <nav class="site-nav" role="navigation">
+      <a href="/">Home</a>
+      <a href="/propsale.html">Proposal</a>
+      <a href="/features.html">Features</a>
+    </nav>
+
+    <header class="page-header" role="banner">
+      <h1 class="project-name">Senior Project Proposal</h1>
+      <h2 class="project-tagline">A Custom Submission Manager for a College Literary Magazine</h2>
+      
+        <a href="https://github.com/Hanover-CS461/senior-project-2026-2027-Alexis-Brockway" class="btn">View on GitHub</a>
+      
+      
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      <p>Three roles — Managing Editor (the 2 co-EiCs + advisor, full view of author identities + all admin powers), Reader (blind), and Submitter (writers, not app users).
+By role:</p>
+<ul>
+  <li>Submitters — submission form, emailed status tracking, withdraw.</li>
+  <li>Managing Editors — full-identity queue, assign readers, notes/discussion, statuses, decision emails, unblind at acceptance, conflict flag, scoring/bulk actions; plus member management (invite, change roles, deactivate), form/genre config, export, backup, archive, audit log.</li>
+  <li>Readers — blind queue (“assigned to me” + shared pile), notes, discussion, scoring, can invite other readers but never grant full view.
+Cross-cutting (blind review) — identity structurally separated from reader queries, file-metadata stripping/warning, letters never name readers, editor-submission conflict detection.
+Trust/handoff — export/backup, audit log for the advisor, deactivate-not-delete for clean semester turnover.
+I also carried the three open questions into the file (advisor’s exact role, when unblinding happens, whether bios are collected at all) so they don’t get lost — those are the ones that’ll firm up the spec once you talk to the club.
+Want me to keep it as-is, or is there anything you’d reshuffle (e.g., separate the advisor into a fourth role, or split managing-editor review powers from admin powers)?
+▣  Deliberate · DeepSeek V4 Flash · 18.3s
+add this md to my github</li>
+  <li>Thought: 3.1s
+→Read .git/config</li>
+  <li>Thought: 597ms
+I can’t push this myself — I don’t have terminal access in this environment, so I can’t run git commands. But your repo is set up correctly (remote is https://github.com/Hanover-CS461/senior-project-2026-2027-Alexis-Brockway.git on branch main), so you just need to run these from the project folder:
+cd /mnt/c/Users/A3bro/senior-project-2026-2027-Alexis-Brockway</li>
+</ul>
+
+<p>git add features.md
+git commit -m “Add feature list by role for Submittable replacement”
+git push origin main
+A couple of things to note:</p>
+<ul>
+  <li>If you want brainstorm.md in there too (it’s currently untracked), do git add features.md brainstorm.md instead.</li>
+  <li>If git push asks for credentials, you may need a personal access token (GitHub no longer accepts plain passwords). If you haven’t already, you can set it up via gh auth login or a token in the credential helper.</li>
+  <li>Check your current state first with git status to make sure you’re not leaving anything else out.
+One small thing worth doing before you commit: I named the file features.md — if you’d rather call it something like spec.md or fold it into brainstorm.md, now’s the cheap time to rename. Otherwise, run those four commands and it’ll be on GitHub.
+▣  Deliberate · DeepSeek V4 Flash · 8.1s
+can you see the new md file now</li>
+  <li>Thought: 1.9s
+→Read . 
+I can see features.md — it’s there in your project folder on disk, right next to brainstorm.md.
+But to be clear about what “seeing it” means: I can read the file that’s saved locally in your repo, which I just confirmed exists. I cannot see GitHub’s copy of it — I have no access to your remote repo, and I can’t run git commands to check whether your push went through. Only you can verify that.
+So the file is definitely created and saved. To confirm it’s actually on GitHub, run:
+git status          # should show features.md (and brainstorm.md) as committed or untracked
+git log –oneline -1
+git push origin main
+If git status shows nothing to commit, working tree clean, your earlier commit+push went through. If it shows Untracked files: features.md, you haven’t committed it yet — run the git add / commit / push steps I gave you.
+Want me to re-read the current contents of features.md to double-check it matches what we put together?
+▣  Deliberate · DeepSeek V4 Flash · 6.3s
+okay can you just create the md file without actualy putting it in the place</li>
+  <li>Thought: 1.6s
+Got it — here’s the full markdown content, so you can copy it wherever you want without me saving it to the repo:
+    <h1 id="submittable-replacement--feature-list-by-role">Submittable Replacement — Feature List by Role</h1>
+  </li>
+</ul>
+
+<p>A custom submission manager for the school’s lit journal, scoped to one club’s
+workflow. Companion to <code class="language-plaintext highlighter-rouge">brainstorm.md</code>.</p>
+
+<h2 id="roles">Roles</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Role</th>
+      <th>Who holds it</th>
+      <th>Sees author identity?</th>
+      <th>System powers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Managing Editor</strong></td>
+      <td>2 co-editors-in-chief + advisor (3 people)</td>
+      <td><strong>Yes</strong> — full view</td>
+      <td>Everything: review workflow + admin</td>
+    </tr>
+    <tr>
+      <td><strong>Reader</strong></td>
+      <td>Club members who read/review</td>
+      <td><strong>No</strong> — blind</td>
+      <td>Review only; can invite other readers</td>
+    </tr>
+    <tr>
+      <td><strong>Submitter</strong></td>
+      <td>External (writers)</td>
+      <td>n/a</td>
+      <td>Submission form + status tracking</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Security rule:</strong> only the Managing Editor role can manage members or change
+roles. If a Reader could promote themselves, blind review would be meaningless.
+Changes are recorded in the audit log.</p>
+
+<hr />
+
+<h2 id="1-for-submitters-writers-not-app-users">1. For Submitters (writers, not app users)</h2>
+
+<ul>
+  <li>Submission form — genre, title, manuscript upload, plus author info (name,
+email, bio) that readers never see.</li>
+  <li>Confirmation + status tracking — emailed status link; no writer accounts.</li>
+  <li>Withdraw a submission.</li>
+</ul>
+
+<h2 id="2-for-managing-editors-full-view--admin">2. For Managing Editors (full view + admin)</h2>
+
+<h3 id="review-workflow">Review workflow</h3>
+<ul>
+  <li>See full author identity on every submission (only role that does).</li>
+  <li>Queue / slush pile with author column.</li>
+  <li>Assign submissions to specific readers.</li>
+  <li>Per-reader notes (their own, plus view everyone’s).</li>
+  <li>Internal discussion on a piece.</li>
+  <li>Manage statuses — configurable stages (Received → In review → Shortlist →
+Accepted/Rejected).</li>
+  <li>Send decisions with email templates (accept / reject / shortlist), signed by
+the journal, not by individual readers.</li>
+  <li>Reveal the author to the team at acceptance (unblind).</li>
+  <li>See the editor-submission conflict flag (when a club member submits their own
+work — routed to all full-view people).</li>
+  <li>Scoring / rating (only if the club actually uses it).</li>
+  <li>Bulk actions — e.g. reject all remaining subs in a genre.</li>
+</ul>
+
+<h3 id="admin--system">Admin / system</h3>
+<ul>
+  <li>Member management: invite new readers and managing editors by email link.</li>
+  <li>Change roles (Reader ↔ Managing Editor).</li>
+  <li>Deactivate members (revoke access, keep their notes/assignments/history).</li>
+  <li>Configure the submission form fields, genres, and reading periods.</li>
+  <li>CSV export + full backup.</li>
+  <li>Past-submission archive (searchable).</li>
+  <li>Audit log — who was invited, promoted, deactivated, and when.</li>
+</ul>
+
+<h2 id="3-for-readers-blind">3. For Readers (blind)</h2>
+
+<ul>
+  <li>See submissions with <strong>no author identity</strong> (title, genre, manuscript only).</li>
+  <li>Queue: “assigned to me” view + the shared pile.</li>
+  <li>Add per-reader notes (attributed to them, private to the editor team).</li>
+  <li>Internal discussion on pieces.</li>
+  <li>Score / rate (if used).</li>
+  <li>Invite other readers (but can never grant full view).</li>
+</ul>
+
+<h2 id="4-blind-review--cross-cutting-enforced-by-the-system">4. Blind review — cross-cutting (enforced by the system)</h2>
+
+<ul>
+  <li>Author identity is stored separately and structurally excluded from every
+reader-facing query/view — not just hidden in the UI.</li>
+  <li>File metadata handling — strip author metadata from uploads and/or warn
+writers about names in document headers.</li>
+  <li>Letters never contain reader names.</li>
+  <li>Editor-submission conflict detection (submitter email matches an editor
+account).</li>
+</ul>
+
+<h2 id="5-trust--handoff-managing-editor-role">5. Trust / handoff (Managing Editor role)</h2>
+
+<ul>
+  <li>Full data export + backup so the club’s archive is never trapped in the code.</li>
+  <li>Audit log for advisor oversight.</li>
+  <li>Deactivate-not-delete so semester turnover is easy and history is preserved.</li>
+</ul>
+
+<hr />
+
+<h2 id="notes--open-items">Notes / open items</h2>
+<ul>
+  <li>Does the advisor act as a full managing editor, or mostly oversight (audit,
+export, backup)? Either way it’s the same role — just a question of which
+screens they use.</li>
+  <li>At what point is the author revealed — acceptance, or only at publication?</li>
+  <li>Does the club collect bios / cover letters at all, given they’d out the author
+instantly?</li>
+</ul>
+
+
+      <footer class="site-footer">
+        
+          <span class="site-footer-owner"><a href="https://github.com/Hanover-CS461/senior-project-2026-2027-Alexis-Brockway">senior-project-2026-2027-Alexis-Brockway</a> is maintained by <a href="https://github.com/Hanover-CS461">Hanover-CS461</a>.</span>
+        
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>
