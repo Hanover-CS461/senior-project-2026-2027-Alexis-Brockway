@@ -33,9 +33,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install Marp CLI
+        run: npm install --global @marp-team/marp-cli@4.5.1
+
       - name: Build Marp slides
         run: |
-          npx --yes @marp-team/marp-cli@latest --html -I ./docs/slides -o ./_site/slides --theme-set ./docs/slides/themes
+          mkdir -p ./_site/slides
+          marp --html -I ./docs/slides -o ./_site/slides --theme-set ./docs/slides/themes
 
       - name: Copy slide assets
         run: |
