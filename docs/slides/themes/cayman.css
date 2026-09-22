@@ -1,0 +1,45 @@
+/* @theme cayman */
+section {
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #fff;
+  color: #606c71;
+  font-size: 28px;
+  padding: 40px 64px;
+}
+
+h1, h2, h3 {
+  color: #159957;
+  font-weight: normal;
+}
+
+section.lead h1,
+section.lead h2,
+section.lead h3 {
+  color: #fff;
+}
+
+section.lead {
+  background: linear-gradient(120deg, #155799, #159957);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+section::after {
+  color: #819198;
+  font-size: 16px;
+}
+
+a {
+  color: #159957;
+}
+
+table {
+  font-size: 22px;
+}
+
+strong {
+  color: #333;
+}
+
+section.lead strong {
+  color: #fff;
+}
