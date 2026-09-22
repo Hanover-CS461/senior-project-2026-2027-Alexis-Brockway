@@ -38,6 +38,7 @@ jobs:
 
       - name: Build Marp slides
         run: |
+          sudo chmod -R a+rwX ./_site
           mkdir -p ./_site/slides
           marp --html -I ./docs/slides -o ./_site/slides --theme-set ./docs/slides/themes
 
