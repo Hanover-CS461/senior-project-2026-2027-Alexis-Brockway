@@ -5,3 +5,5 @@
 Read the proposal: [propsale.html](propsale.html)
 
 Read the Featurs: [features.html](features.html)
+
+View the slides: [slides/](slides/index.html)

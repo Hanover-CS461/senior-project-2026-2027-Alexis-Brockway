@@ -1,5 +1,9 @@
 remote_theme: pages-themes/cayman
 title: Senior Project Proposal
 description: A Custom Submission Manager for a College Literary Magazine
+url: "https://hanover-cs461.github.io"
+baseurl: "/senior-project-2026-2027-Alexis-Brockway"
+exclude:
+  - slides
 plugins:
   - jekyll-remote-theme
