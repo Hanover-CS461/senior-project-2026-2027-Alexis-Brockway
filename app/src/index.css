@@ -138,6 +138,31 @@ p {
   text-decoration: underline;
 }
 
+.rules-block {
+  max-width: 560px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 20px 16px;
+  margin: 20px 0 4px;
+  background: #fafafa;
+}
+
+.rules-block h2 {
+  font-size: 16px;
+  color: var(--ink);
+  margin: 16px 0 4px;
+}
+
+.rules-block .rules {
+  margin: 8px 0 4px;
+}
+
+.hint {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .form {
   max-width: 560px;
   display: flex;

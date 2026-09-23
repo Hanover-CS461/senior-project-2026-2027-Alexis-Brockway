@@ -3,52 +3,70 @@ export interface Genre {
   name: string
   blurb: string
   rules: string[]
+  fileTypes: string
+  fileHint: string
 }
+
+export const generalRequirements: string[] = [
+  'We accept work from Hanover College students, alumni, staff, and faculty, plus other creative contributors.',
+  'Prose, poetry, and art are accepted from August 1 to February 8.',
+  'Blind review: do NOT include your name in the file. Include the title of your piece in the file and in the form.',
+  'You may submit up to five pieces, each to a different category.',
+  'Simultaneous submissions are acceptable if you tell us promptly of acceptance elsewhere.',
+  'No AI-generated work. Nothing racist, homophobic, transphobic, xenophobic, or otherwise exclusionary. No overly graphic or sexual content.',
+  'Work that does not follow the guidelines will be deleted unread.',
+]
 
 export const genres: Genre[] = [
   {
     slug: 'fiction',
     name: 'Fiction',
-    blurb: 'Short stories and flash fiction.',
+    blurb: 'Satiric stories, tragic tales, and everything between.',
     rules: [
-      'Up to 5,000 words per piece.',
-      'Submit one story per submission period.',
-      'Double-space and number the pages.',
-      'Include a brief cover note with the title and word count.',
+      'One or more prose works, 500–3,000 words (or up to 10 pages).',
+      'Use an easy-to-read font and double-space the text.',
+      'Submit as a Word file and do not include your name in the document.',
     ],
+    fileTypes: '.doc,.docx',
+    fileHint: 'Word file (.doc or .docx)',
   },
   {
     slug: 'poetry',
     name: 'Poetry',
-    blurb: 'Poems of any length or form.',
+    blurb: 'Promising poems of any length or form.',
     rules: [
-      'Submit up to 5 poems in a single file.',
-      'Poems may be any form: free verse, formal, or experimental.',
-      'No more than 10 pages total.',
-      'Please no previously published poems.',
+      'Submit 1–3 poems in the same document.',
+      'Use an easy-to-read font and double-spaced text.',
+      'Submit as a Word file, or a PDF if the poem is format-sensitive.',
+      'No chapbook submissions; each poem is considered individually.',
+      'Do not include your name in the document.',
     ],
+    fileTypes: '.doc,.docx,.pdf',
+    fileHint: 'Word file (.doc/.docx) or PDF',
   },
   {
     slug: 'creative-nonfiction',
     name: 'Creative Nonfiction',
-    blurb: 'Essays and memoir.',
+    blurb: 'Nihilistic nonfiction, essays, and memoir.',
     rules: [
-      'Up to 5,000 words per piece.',
-      'Essays and memoir welcomed; no academic papers.',
-      'Double-space and number the pages.',
-      'Show, don\u2019t just tell.',
+      'One or more prose works, 500–3,000 words (or up to 10 pages).',
+      'Use an easy-to-read font and double-spaced text.',
+      'Submit as a Word file and do not include your name in the document.',
     ],
+    fileTypes: '.doc,.docx',
+    fileHint: 'Word file (.doc or .docx)',
   },
   {
     slug: 'visual-arts',
-    name: 'Visual Arts',
-    blurb: 'Photography and other visual work.',
+    name: 'Photography & Visual Art',
+    blurb: 'Picturesque photos and amazing artwork.',
     rules: [
-      'High-resolution images only (JPEG or PNG).',
-      'At least 2000px on the longest side.',
-      'You may submit up to 5 images.',
-      'Include a short artist statement (200 words or fewer).',
+      'Submit 1–5 works.',
+      'High-resolution JPG files (300–600 dpi).',
+      'Name each JPG file with the title of the work.',
     ],
+    fileTypes: '.jpg,.jpeg',
+    fileHint: 'High-resolution JPG (300–600 dpi)',
   },
 ]
 

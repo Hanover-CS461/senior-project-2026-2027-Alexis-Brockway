@@ -1,21 +1,11 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, Navigate } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-
-const genres = [
-  'Fiction',
-  'Poetry',
-  'Creative Nonfiction',
-  'Visual Arts',
-] as const
+import { getGenre, generalRequirements } from '../data/genres'
 
 const submissionSchema = z.object({
-  genre: z
-    .enum(genres, { message: 'Pick a genre' })
-    .or(z.literal(''))
-    .refine((g) => g !== '', 'Pick a genre'),
   title: z.string().min(1, 'Title is required').max(200),
   authorName: z.string().min(1, 'Name is required').max(100),
   authorEmail: z.string().email('Enter a valid email'),
@@ -40,7 +30,8 @@ type SubmissionFormValues = z.input<typeof submissionSchema>
 function SubmitPage() {
   const [submitted, setSubmitted] = useState(false)
   const [searchParams] = useSearchParams()
-  const preSelectedGenre = searchParams.get('genre') ?? ''
+  const genreSlug = searchParams.get('genre') ?? ''
+  const genre = genreSlug ? getGenre(genreSlug) : undefined
 
   const {
     register,
@@ -49,7 +40,6 @@ function SubmitPage() {
   } = useForm<SubmissionFormValues>({
     resolver: zodResolver(submissionSchema),
     defaultValues: {
-      genre: preSelectedGenre as SubmissionFormValues['genre'],
       title: '',
       authorName: '',
       authorEmail: '',
@@ -59,8 +49,12 @@ function SubmitPage() {
     },
   })
 
+  if (!genre) {
+    return <Navigate to="/submit/genre" replace />
+  }
+
   const onSubmit = (values: SubmissionFormValues) => {
-    console.log('submission', values)
+    console.log('submission', { genre: genre.name, ...values })
     setSubmitted(true)
   }
 
@@ -72,32 +66,37 @@ function SubmitPage() {
           Thanks! Once email is wired up, a status link will be sent here. For
           now, this confirms the form works and validates.
         </p>
+        <p className="back-link">
+          <Link to="/">← Back to home</Link>
+        </p>
       </div>
     )
   }
 
   return (
     <div className="page">
-      <h1>Submit a manuscript</h1>
+      <h1>{genre.name} Submission</h1>
       <p className="lede">
         Your name, email, mailing address, and bio are private — readers never
         see them.
       </p>
 
-      <form className="form" onSubmit={handleSubmit(onSubmit)}>
-        <label>
-          Genre
-          <select {...register('genre')}>
-            <option value="">Choose a genre</option>
-            {genres.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-          {errors.genre && <span className="error">{errors.genre.message}</span>}
-        </label>
+      <div className="rules-block">
+        <h2>{genre.name} rules</h2>
+        <ul className="rules">
+          {genre.rules.map((rule) => (
+            <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+        <h2>General requirements</h2>
+        <ul className="rules">
+          {generalRequirements.map((rule) => (
+            <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+      </div>
 
+      <form className="form" onSubmit={handleSubmit(onSubmit)}>
         <label>
           Title
           <input type="text" placeholder="Title of the piece" {...register('title')} />
@@ -155,9 +154,10 @@ function SubmitPage() {
           Manuscript
           <input
             type="file"
-            accept=".docx,.pdf,.doc,.md,.txt,.rtf,.odt"
+            accept={genre.fileTypes}
             {...register('manuscript')}
           />
+          <span className="hint">{genre.fileHint}</span>
           {errors.manuscript && (
             <span className="error">{errors.manuscript.message}</span>
           )}

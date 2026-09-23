@@ -1,5 +1,5 @@
 import { Link, useParams, Navigate } from 'react-router-dom'
-import { getGenre } from '../data/genres'
+import { getGenre, generalRequirements } from '../data/genres'
 
 function GenreRulesPage() {
   const { genreSlug } = useParams()
@@ -20,7 +20,17 @@ function GenreRulesPage() {
         ))}
       </ul>
 
-      <Link to={`/submit?genre=${encodeURIComponent(genre.name)}`} className="btn">
+      <h2>General requirements</h2>
+      <ul className="rules">
+        {generalRequirements.map((rule) => (
+          <li key={rule}>{rule}</li>
+        ))}
+      </ul>
+
+      <Link
+        to={`/submit?genre=${encodeURIComponent(genre.slug)}`}
+        className="btn"
+      >
         Continue to {genre.name} form
       </Link>
 
