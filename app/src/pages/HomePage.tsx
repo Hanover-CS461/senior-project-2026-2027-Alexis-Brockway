@@ -11,8 +11,8 @@ function HomePage() {
       <div className="cards">
         <div className="card">
           <h2>I'm a writer</h2>
-          <p>Submit a story, poem, or essay and track its status.</p>
-          <Link to="/submit" className="btn">
+          <p>Submit a story, poem, essay, or visual art and track its status.</p>
+          <Link to="/submit/genre" className="btn">
             Submit a manuscript
           </Link>
         </div>
