@@ -4,6 +4,7 @@ import GenrePage from './pages/GenrePage'
 import GenreRulesPage from './pages/GenreRulesPage'
 import SubmitPage from './pages/SubmitPage'
 import ReaderQueuePage from './pages/ReaderQueuePage'
+import ReaderSubmissionPage from './pages/ReaderSubmissionPage'
 import EditorDashboardPage from './pages/EditorDashboardPage'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/submit/genre/:genreSlug" element={<GenreRulesPage />} />
           <Route path="/submit" element={<SubmitPage />} />
           <Route path="/reader" element={<ReaderQueuePage />} />
+          <Route path="/reader/:submissionId" element={<ReaderSubmissionPage />} />
           <Route path="/editor" element={<EditorDashboardPage />} />
         </Routes>
       </main>
