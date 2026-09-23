@@ -1,39 +1,18 @@
 import { Link } from 'react-router-dom'
-
-const genres = [
-  {
-    name: 'Fiction',
-    blurb: 'Short stories and flash fiction.',
-  },
-  {
-    name: 'Poetry',
-    blurb: 'Poems of any length or form.',
-  },
-  {
-    name: 'Creative Nonfiction',
-    blurb: 'Essays and memoir.',
-  },
-  {
-    name: 'Visual Arts',
-    blurb: 'Photography and other visual work.',
-  },
-]
+import { genres } from '../data/genres'
 
 function GenrePage() {
   return (
     <div className="home">
       <h1>What are you submitting?</h1>
-      <p className="lede">Pick a genre to start your submission.</p>
+      <p className="lede">Pick a genre to see the rules and start your submission.</p>
 
       <div className="cards">
         {genres.map((genre) => (
-          <div className="card" key={genre.name}>
+          <div className="card" key={genre.slug}>
             <h2>{genre.name}</h2>
             <p>{genre.blurb}</p>
-            <Link
-              to={`/submit?genre=${encodeURIComponent(genre.name)}`}
-              className="btn"
-            >
+            <Link to={`/submit/genre/${genre.slug}`} className="btn">
               Submit {genre.name}
             </Link>
           </div>
