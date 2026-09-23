@@ -62,11 +62,11 @@ export const genres: Genre[] = [
     blurb: 'Picturesque photos and amazing artwork.',
     rules: [
       'Submit 1–5 works.',
-      'High-resolution JPG files (300–600 dpi).',
-      'Name each JPG file with the title of the work.',
+      'High-resolution JPG or PNG files (300–600 dpi).',
+      'Name each file with the title of the work.',
     ],
-    fileTypes: '.jpg,.jpeg',
-    fileHint: 'High-resolution JPG (300–600 dpi)',
+    fileTypes: '.jpg,.jpeg,.png',
+    fileHint: 'High-resolution JPG or PNG (300–600 dpi)',
   },
 ]
 
