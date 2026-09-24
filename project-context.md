@@ -129,8 +129,9 @@ Important details to keep straight:
 | `docs/slides/` | Live | Marp slide deck (`index.md`) + custom Cayman theme (`themes/cayman.css`) + assets |
 | `.github/workflows/jekyll-gh-pages.yml` | Live | Builds Jekyll site + Marp slides, deploys to Pages |
 | `app/` | **The app** | React + Vite + TS scaffold (the submission manager) |
-| `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, ReaderQueuePage (placeholder), EditorDashboardPage (placeholder) |
+| `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage (placeholder) |
 | `app/src/data/genres.ts` | Current | The 4 genres + real Kennings rules (single source of truth) |
+| `app/src/data/submissions.ts` | Current | Fake submissions for the reader queue (deliberately NO author data — blind review demo) |
 | `.vscode/settings.json` | Current | Marp theme path for VS Code preview |
 
 The `_site` folder (Jekyll generated output) is committed in this repo but is
@@ -153,16 +154,17 @@ regenerated on every build — it does not need to be hand-edited.
 
 1. **Wire the submission form to Supabase** — create the Supabase project,
    schema (submissions + authors tables, RLS policies), install
-   `@supabase/supabase-js`, and make the form actually save. THIS IS THE NEXT
-   STEP.
-2. **Reader queue** — the blind review view (title/genre/manuscript only).
-3. **Editor dashboard** — full-view queue, assignments, notes, statuses,
-   decision letters.
-4. **Email (Resend)** — status links + decision letters via a Supabase Edge
+   `@supabase/supabase-js`, and make the form actually save. This is the top
+   remaining step.
+2. **Editor dashboard** — full-view queue (with author identity), assignments,
+   notes, statuses, decision letters.
+3. **Email (Resend)** — status links + decision letters via a Supabase Edge
    Function.
-5. **File uploads + metadata stripping** — Supabase Storage + `exifr`/`pdf-lib`/
+4. **File uploads + metadata stripping** — Supabase Storage + `exifr`/`pdf-lib`/
    zip `.docx` handling at intake.
-6. **Auth / member management** — Supabase Auth, roles, invite/deactivate.
+5. **Auth / member management** — Supabase Auth, roles, invite/deactivate.
+6. **Reader queue notes/score persistence** — notes and scores currently live
+   in local component state only; they need to save to the database.
 7. Advisor role: full managing editor or oversight-only (audit/export)?
 8. Author reveal timing: at acceptance, or only at publication?
 9. Do they collect bios/cover letters at all (they'd out the author instantly)?
@@ -170,6 +172,21 @@ regenerated on every build — it does not need to be hand-edited.
     Hanover-student checkbox wording right?
 11. Decide canonical filename (see §7 note about proposal files).
 12. Tests (Vitest + Playwright) and production deploy (Netlify/Vercel).
+
+## 9b. Build progress (what exists so far)
+
+- **Submission flow (done):** genre picker (4 genres) → per-genre rules page
+  (real Kennings rules + general requirements) → submission form. Form fields:
+  title, author name, email, mailing address, Hanover-student checkbox, bio
+  (optional), manuscript file (file types restricted per genre). On submit it
+  currently just logs to console and shows "Submission received" — NOT saved
+  to a database yet.
+- **Reader queue (done, fake data):** `/reader` shows two tabs ("Assigned to
+  me" and "Shared pile"), each item showing title, genre, status badge, and
+  excerpt — no author identity anywhere. `/reader/:id` shows the manuscript,
+  a private notes textarea, and a 1–5 score. Fake data lives in
+  `app/src/data/submissions.ts`; notes/score are local state only.
+- **Editor dashboard (not built):** placeholder page at `/editor`.
 
 ## 10. Glossary (as the user learned it)
 
