@@ -2,9 +2,11 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { EDITOR_ROLES, type MemberRole } from '../data/members'
 
 interface MemberRow {
-  role: string
+  user_id: string
+  role: MemberRole
   name: string
 }
 
@@ -17,13 +19,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null)
 
-const editorRoles = new Set([
-  'staff_editor',
-  'editor',
-  'co_editor',
-  'chief_editor',
-  'advisor',
-])
+const editorRoles = new Set<string>(EDITOR_ROLES)
 
 export function isEditorRole(role: string | null): boolean {
   return role ? editorRoles.has(role) : false
@@ -58,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loadMember = async () => {
       const { data } = await supabase
         .from('members')
-        .select('role, name')
+        .select('user_id, role, name')
         .eq('user_id', userId)
         .maybeSingle()
       if (data) {
@@ -78,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: created } = await supabase
         .from('members')
         .insert(row)
-        .select('role, name')
+        .select('user_id, role, name')
         .maybeSingle()
       if (created) {
         setMember(created)
@@ -88,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: fallback } = await supabase
         .from('members')
         .insert({ ...row, role: 'reader' })
-        .select('role, name')
+        .select('user_id, role, name')
         .maybeSingle()
       if (fallback) setMember(fallback)
     }

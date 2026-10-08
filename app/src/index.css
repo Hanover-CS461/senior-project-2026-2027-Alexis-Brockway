@@ -387,6 +387,22 @@ p {
   opacity: 0.55;
 }
 
+.members h3 {
+  margin: 28px 0 4px;
+}
+
+.audit-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.audit-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
 .btn-small {
   margin-top: 0;
   margin-right: 8px;
