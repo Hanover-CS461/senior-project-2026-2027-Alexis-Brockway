@@ -3,11 +3,17 @@ import HomePage from './pages/HomePage'
 import GenrePage from './pages/GenrePage'
 import GenreRulesPage from './pages/GenreRulesPage'
 import SubmitPage from './pages/SubmitPage'
+import LoginPage from './pages/LoginPage'
 import ReaderQueuePage from './pages/ReaderQueuePage'
 import ReaderSubmissionPage from './pages/ReaderSubmissionPage'
 import EditorDashboardPage from './pages/EditorDashboardPage'
+import EditorSubmissionPage from './pages/EditorSubmissionPage'
+import { RequireAuth } from './components/RequireAuth'
+import { useAuth } from './lib/auth'
 
 function App() {
+  const { session, member, signOut } = useAuth()
+
   return (
     <div className="app-shell">
       <nav className="site-nav">
@@ -18,6 +24,13 @@ function App() {
           <Link to="/submit">Submit</Link>
           <Link to="/reader">Reader queue</Link>
           <Link to="/editor">Editor dashboard</Link>
+          {session ? (
+            <button type="button" className="btn nav-btn" onClick={signOut}>
+              Log out {member?.name ?? ''}
+            </button>
+          ) : (
+            <Link to="/login">Log in</Link>
+          )}
         </div>
       </nav>
 
@@ -27,9 +40,25 @@ function App() {
           <Route path="/submit/genre" element={<GenrePage />} />
           <Route path="/submit/genre/:genreSlug" element={<GenreRulesPage />} />
           <Route path="/submit" element={<SubmitPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/reader" element={<ReaderQueuePage />} />
           <Route path="/reader/:submissionId" element={<ReaderSubmissionPage />} />
-          <Route path="/editor" element={<EditorDashboardPage />} />
+          <Route
+            path="/editor"
+            element={
+              <RequireAuth editor>
+                <EditorDashboardPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/editor/:submissionId"
+            element={
+              <RequireAuth editor>
+                <EditorSubmissionPage />
+              </RequireAuth>
+            }
+          />
         </Routes>
       </main>
     </div>

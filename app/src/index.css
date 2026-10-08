@@ -249,6 +249,23 @@ p {
   margin: 6px 0;
 }
 
+.queue-author {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.queue-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  margin: 2px 0;
+}
+
 .queue-excerpt {
   color: var(--muted);
   font-size: 15px;
@@ -271,7 +288,9 @@ p {
 }
 
 .notes-box,
-.score-box {
+.score-box,
+.author-box,
+.status-box {
   max-width: 620px;
   margin-top: 28px;
   border-top: 1px solid var(--border);
@@ -279,9 +298,155 @@ p {
 }
 
 .notes-box h2,
-.score-box h2 {
+.score-box h2,
+.author-box h2,
+.status-box h2 {
   font-size: 17px;
   color: var(--ink);
+}
+
+.author-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.author-email,
+.author-mailing {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.author-bio {
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.status-select {
+  font: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  margin-right: 12px;
+}
+
+.members {
+  max-width: 860px;
+}
+
+.members h2 {
+  margin-bottom: 4px;
+}
+
+.member-form {
+  margin-top: 16px;
+}
+
+.member-form .btn {
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.member-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+  font-size: 15px;
+}
+
+.member-table th,
+.member-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.member-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.member-table select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.member-inactive td {
+  opacity: 0.55;
+}
+
+.btn-small {
+  margin-top: 0;
+  margin-right: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.btn-danger {
+  background: #c0392b;
+}
+
+.btn-danger:hover {
+  background: #a93226;
+}
+
+.queue-rating {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 6px 0 0;
+}
+
+.ratings-box {
+  max-width: 620px;
+  margin-top: 28px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.ratings-box h2 {
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.rating-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rating-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.rating-name {
+  font-size: 15px;
+}
+
+.recused-title {
+  margin-top: 20px;
+  color: var(--muted) !important;
+  font-size: 15px !important;
 }
 
 .notes-box textarea {
@@ -331,6 +496,21 @@ p {
   background: var(--teal);
   color: #fff;
   border-color: var(--teal);
+}
+
+.score-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.blind-check {
+  margin: 10px 0;
+}
+
+.blind-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--teal);
 }
 
 .score-box .saved-note {

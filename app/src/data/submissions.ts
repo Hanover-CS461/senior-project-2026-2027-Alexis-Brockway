@@ -5,6 +5,7 @@ export interface Submission {
   status: 'Received' | 'In review' | 'Shortlist'
   excerpt: string
   assignedToMe: boolean
+  hanoverStudent: boolean
 }
 
 export const fakeSubmissions: Submission[] = [
@@ -16,6 +17,7 @@ export const fakeSubmissions: Submission[] = [
     excerpt:
       'The ferry left at dusk, and with it went every plan the two of them had spent the summer building. On the far shore the town lights blinked once, twice, and then went dark for good.',
     assignedToMe: true,
+    hanoverStudent: true,
   },
   {
     id: 'sub-2',
@@ -25,6 +27,7 @@ export const fakeSubmissions: Submission[] = [
     excerpt:
       'You swallow the grease of a thousand suppers / and ask for nothing but water, / a little salt, and to be left alone.',
     assignedToMe: true,
+    hanoverStudent: false,
   },
   {
     id: 'sub-3',
@@ -34,6 +37,7 @@ export const fakeSubmissions: Submission[] = [
     excerpt:
       'Every October my family paid five dollars to get lost on purpose. The maze was a kindness: it gave us somewhere to be wrong together without having to admit it.',
     assignedToMe: false,
+    hanoverStudent: true,
   },
   {
     id: 'sub-4',
@@ -43,6 +47,7 @@ export const fakeSubmissions: Submission[] = [
     excerpt:
       'My grandmother kept her wedding cups / in a cabinet that smelled of cedar / and never let them touch.',
     assignedToMe: false,
+    hanoverStudent: true,
   },
   {
     id: 'sub-5',
@@ -52,6 +57,7 @@ export const fakeSubmissions: Submission[] = [
     excerpt:
       'A series of three photographs of the suspension bridge after midnight, shot on film, focused on the cables against the sky.',
     assignedToMe: false,
+    hanoverStudent: false,
   },
   {
     id: 'sub-6',
@@ -61,6 +67,7 @@ export const fakeSubmissions: Submission[] = [
     excerpt:
       'First, wait until you are sure no one will answer. That is the whole trick — the call matters only in the space where it will not be returned.',
     assignedToMe: true,
+    hanoverStudent: false,
   },
 ]
 

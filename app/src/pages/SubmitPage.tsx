@@ -4,6 +4,7 @@ import { Link, useSearchParams, Navigate } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getGenre, generalRequirements } from '../data/genres'
+import { supabase } from '../lib/supabase'
 
 const submissionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -29,6 +30,8 @@ type SubmissionFormValues = z.input<typeof submissionSchema>
 
 function SubmitPage() {
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
   const genreSlug = searchParams.get('genre') ?? ''
   const genre = genreSlug ? getGenre(genreSlug) : undefined
@@ -53,9 +56,51 @@ function SubmitPage() {
     return <Navigate to="/submit/genre" replace />
   }
 
-  const onSubmit = (values: SubmissionFormValues) => {
-    console.log('submission', { genre: genre.name, ...values })
-    setSubmitted(true)
+  const onSubmit = async (values: SubmissionFormValues) => {
+    setError(null)
+    setSubmitting(true)
+    try {
+      const submissionId = crypto.randomUUID()
+      const file = values.manuscript[0]
+      const filePath = `${submissionId}/${file.name}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('manuscripts')
+        .upload(filePath, file)
+      if (uploadError) throw uploadError
+
+      const { error: subError } = await supabase.from('submissions').insert({
+        id: submissionId,
+        title: values.title,
+        genre: genre.name,
+        status: 'Received',
+        hanover_student: values.hanoverStudent,
+        manuscript_path: filePath,
+      })
+      if (subError) throw subError
+
+      const { error: authorError } = await supabase.from('authors').insert({
+        submission_id: submissionId,
+        name: values.authorName,
+        email: values.authorEmail,
+        mailing_address: values.mailingAddress,
+        bio: values.bio ?? '',
+      })
+      if (authorError) throw authorError
+
+      setSubmitted(true)
+    } catch (e) {
+      console.error('submit failed:', e)
+      const message =
+        e instanceof Error
+          ? e.message
+          : e && typeof e === 'object' && 'message' in e
+            ? String(e.message)
+            : 'Something went wrong'
+      setError(message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -163,8 +208,10 @@ function SubmitPage() {
           )}
         </label>
 
-        <button type="submit" className="btn">
-          Submit
+        {error && <p className="error">{error}</p>}
+
+        <button type="submit" className="btn" disabled={submitting}>
+          {submitting ? 'Submitting…' : 'Submit'}
         </button>
       </form>
     </div>
