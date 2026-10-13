@@ -2,13 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
-import { EDITOR_ROLES, type MemberRole } from '../data/members'
-
-interface MemberRow {
-  user_id: string
-  role: MemberRole
-  name: string
-}
+import { joinClub, type MemberRow, type MembershipClient } from './membership'
 
 interface AuthState {
   session: Session | null
@@ -19,10 +13,23 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null)
 
-const editorRoles = new Set<string>(EDITOR_ROLES)
-
-export function isEditorRole(role: string | null): boolean {
-  return role ? editorRoles.has(role) : false
+const membershipClient: MembershipClient = {
+  async findMember(userId) {
+    const { data } = await supabase
+      .from('members')
+      .select('user_id, role, name')
+      .eq('user_id', userId)
+      .maybeSingle()
+    return data
+  },
+  async insertMember(row) {
+    const { data } = await supabase
+      .from('members')
+      .insert(row)
+      .select('user_id, role, name')
+      .maybeSingle()
+    return data
+  },
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -49,44 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMember(null)
       return
     }
-    const userId = session.user.id
 
+    const user = session.user
     const loadMember = async () => {
-      const { data } = await supabase
-        .from('members')
-        .select('user_id, role, name')
-        .eq('user_id', userId)
-        .maybeSingle()
-      if (data) {
-        setMember(data)
-        return
-      }
-
-      const metadata = session.user.user_metadata ?? {}
-      const name = (metadata.name as string | undefined) || session.user.email || ''
-      const row = {
-        user_id: userId,
-        name,
-        email: session.user.email ?? '',
-        role: 'chief_editor',
-      }
-
-      const { data: created } = await supabase
-        .from('members')
-        .insert(row)
-        .select('user_id, role, name')
-        .maybeSingle()
-      if (created) {
-        setMember(created)
-        return
-      }
-
-      const { data: fallback } = await supabase
-        .from('members')
-        .insert({ ...row, role: 'reader' })
-        .select('user_id, role, name')
-        .maybeSingle()
-      if (fallback) setMember(fallback)
+      const row = await joinClub(
+        {
+          id: user.id,
+          email: user.email,
+          name: (user.user_metadata?.name as string | undefined) ?? null,
+        },
+        membershipClient,
+      )
+      setMember(row)
     }
 
     loadMember()

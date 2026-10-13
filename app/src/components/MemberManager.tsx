@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { canManageMembers } from '../lib/roles'
 import {
   MEMBER_ROLES,
   roleLabel,
@@ -22,7 +23,7 @@ function describeAudit(entry: MemberAuditEntry, nameOf: (id: string | null) => s
 
 function MemberManager() {
   const { member: currentMember } = useAuth()
-  const isChief = currentMember?.role === 'chief_editor'
+  const isChief = canManageMembers(currentMember?.role)
 
   const [members, setMembers] = useState<Member[]>([])
   const [audit, setAudit] = useState<MemberAuditEntry[]>([])

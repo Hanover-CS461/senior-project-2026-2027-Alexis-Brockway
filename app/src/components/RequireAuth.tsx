@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { isEditorRole, useAuth } from '../lib/auth'
+import { useAuth } from '../lib/auth'
+import { isEditorRole } from '../lib/roles'
 
 interface RequireAuthProps {
   editor?: boolean
