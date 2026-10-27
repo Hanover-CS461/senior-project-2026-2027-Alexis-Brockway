@@ -1,12 +1,19 @@
 -- ============================================================
--- Kennings submission manager — full schema
--- Run this in the Supabase dashboard: SQL Editor -> paste -> Run
--- Safe to re-run: tables use IF NOT EXISTS, functions use
--- CREATE OR REPLACE, and policies/triggers are dropped first.
+-- Migration 20261013000000_init
+-- Kennings submission manager — initial schema.
 --
--- This is the canonical source of truth for the database. It
--- matches the live project (roles are snake_case, members has a
--- name column) and adds the member-management policies.
+-- This is the canonical source of truth for the database and is
+-- applied with `npm run db:push` (Supabase CLI), NOT by pasting
+-- into the dashboard. It matches the live project (roles are
+-- snake_case, members has a name column) and includes the
+-- member-management policies.
+--
+-- It is written to be idempotent (IF NOT EXISTS / CREATE OR
+-- REPLACE / DROP POLICY first), so it also applies cleanly to the
+-- already-provisioned remote project the first time it is pushed.
+--
+-- For later changes, add a NEW timestamped migration in this
+-- directory — never edit this file once it has been pushed.
 -- ============================================================
 
 -- ------------------------------------------------------------
