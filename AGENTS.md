@@ -2,7 +2,7 @@
 
 *Read this first.* This is the onboarding/handoff file for any AI agent (or
 human) working in this repo. It replaces the old `project-context.md`. Last
-updated **Oct 13, 2026**.
+updated **Oct 20, 2026**.
 
 ---
 
@@ -22,34 +22,40 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Oct 13, 2026)
+## 2. Current status (Oct 20, 2026)
 
-- **Proposal** — DONE, live on GitHub Pages (see §8).
+- **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
   Jekyll site). Backend is **Supabase**, live in project `qsynlsbltpnhzncpqerz`
-  (free tier).
+  (free tier). **Not deployed yet** — the live URL is the §13 goal.
 - **Submission flow** — DONE and wired to Supabase (file → Storage, then
   `submissions` + `authors` rows).
 - **Auth** — DONE: in-app sign-up/sign-in; the first sign-up becomes Chief
-  Editor (enforced by RLS), everyone after joins as Reader.
+  Editor (enforced by RLS), everyone after joins as Reader. **On the live
+  project this bootstrap no longer fires** — `member_count()` is 1, so a new
+  sign-up joins as a Reader, and email confirmation is still ON. See §7.
 - **Editor dashboard** — Queue reads real data; `/editor/:id` reads real
-  submission + author and saves status. **Member Manager now persists to the
-  `members` table** (role changes + soft deactivate/reactivate) with an audit
-  trail — but see the "must apply schema" note in §7.
+  submission + author and saves status. **Member Manager is implemented against
+  the `members` table** (role changes + soft deactivate/reactivate) with an audit
+  trail — in `app/supabase/migrations/20261013000000_init.sql`, but **not yet
+  applied to the live project**. Read the "live database is behind the repo"
+  note in §7 before trusting any of it; §13 has the fix.
 - **Reader queue** — still **fake data** (`app/src/data/*.ts`); notes/scores are
   local state only and are **not** login-gated yet.
 - **Tests** — Vitest + Playwright are set up and green (unit + anon-RLS + UI
   E2E). The authenticated reader-vs-editor suites are written but **skipped**
   until test credentials are supplied; activating them is tracked in issue #4.
-- **Open work** — issues #1–#4 (§8).
+- **Open work** — issues #1–#4 (§8). The immediate plan is §13: a live URL by
+  **Nov 24, 2026**.
 
 ---
 
 ## 3. Environment & commands
 
-- **Node is at `~/node/bin`** (v20.19.0, installed manually — there is no
-  system Node). `~/.bashrc` adds it to PATH. If a fresh terminal says "node not
-  found": `export PATH="$HOME/node/bin:$PATH"`.
+- **Node is v22.22.1** and is on the default PATH (`/usr/bin/node`); `~/node/bin`
+  also has a copy. If a fresh terminal says "node not found":
+  `export PATH="$HOME/node/bin:$PATH"`. (The Pages workflow still pins
+  `node-version: 20` — align it or leave it deliberately.)
 - Repo root: `/mnt/c/Users/A3bro/senior-project-2026-2027-Alexis-Brockway`
   (Windows drive via WSL).
 
@@ -63,7 +69,22 @@ All app commands run from `app/`:
 | `npm test` | Vitest: unit + live anon-RLS tests |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:e2e` | Playwright (starts/reuses the dev server) |
+| `npm run db:login` | One-time: log the CLI into your Supabase account (browser/paste token) |
+| `npm run db:link` | One-time: link the CLI to project `qsynlsbltpnhzncpqerz` (prompts for the DB password) |
+| `npm run db:push` | Apply new migrations to the live project (`supabase db push --linked`) |
+| `npm run db:push:dry` | Show which migrations would run, without applying |
+| `npm run db:new -- <name>` | Create a new empty migration file |
+| `npm run db:start` / `db:stop` | Local Supabase stack (needs Docker; not installed) |
+| `npm run db:reset` | Rebuild the LOCAL db from migrations + seed (needs Docker) |
 
+- **Database changes are code now.** The schema lives in
+  `app/supabase/migrations/` (timestamped, applied in order) and settings in
+  `app/supabase/config.toml`; the Supabase CLI is pinned as a devDependency.
+  **Do not paste SQL into the dashboard** — add a migration and `npm run
+  db:push`. Never edit a migration that has already been pushed; add a new one.
+- **First-time CLI setup (once per machine):** `npm run db:link` (needs the
+  database password from the Supabase dashboard → Settings → Database). The
+  link is cached in `app/supabase/.temp` (gitignored).
 - **Credentials** live in `app/.env` (gitignored): `VITE_SUPABASE_URL`,
   `VITE_SUPABASE_ANON_KEY`. Vite inlines `VITE_*` as `import.meta.env.*`. The
   client is `app/src/lib/supabase.ts`. Restart the dev server after changing
@@ -117,12 +138,17 @@ All app commands run from `app/`:
 | `app/src/lib/` | Current | `supabase.ts` (client), `auth.tsx` (AuthProvider/`useAuth`), `roles.ts` (pure role helpers), `membership.ts` (`joinClub` + `MembershipClient` seam) |
 | `app/src/lib/*.test.ts` | Current | `roles`, `membership` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Mixed | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). `submissions/authors/manuscripts/ratings.ts` are still fake reader data |
-| `app/supabase/schema.sql` | **Canonical** | Full idempotent schema (tables, functions, RLS, storage, audit) — paste into the SQL Editor |
+| `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
+| `app/supabase/config.toml` | Current | Supabase project settings as code (project ref, auth, storage, ports) |
 | `app/supabase/tests/rls.test.sql` | Current | pgTAP policy tests (needs Supabase CLI + Docker) |
 | `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles |
 | `app/playwright.config.ts`, `app/vite.config.ts`, `app/test/setup.ts` | Current | Test/build config; setup loads `.env.test` |
 | `app/.env` / `app/.env.test` | Gitignored | Supabase creds / test accounts |
 | `app/.env.test.example` | Current | Template for the authenticated tests |
+| `app/.env.example` | **Planned** (§13 wk 2) | Project URL + publishable key, so a fresh clone runs with no setup |
+| `app/supabase/seed.sql` | **Planned** (§13 wk 2) | Demo submissions/authors/ratings. **Does not exist yet**, but `config.toml` already points `db.seed.sql_paths` at `./seed.sql`, so `db:reset` fails without it |
+| `app/supabase/functions/` | **Planned** (§13 wk 5) | Edge Functions — metadata stripping (issue #3), decision-letter email |
+| `netlify.toml` / `vercel.json` | Not needed | Hosting is GitHub Pages (§5); no static-host config required |
 
 The committed `docs/_site` is generated output — don't hand-edit.
 
@@ -140,6 +166,7 @@ The committed `docs/_site` is generated output — don't hand-edit.
 | Resend | Transactional email | status links / decision letters (planned) |
 | Vitest + Playwright | Testing | set up and green |
 | oxlint | Linting | `npm run lint` |
+| GitHub Pages | Hosting | Free; no new accounts. App served at `/app/` under the existing Jekyll site — **not** at the site root, which would break the proposal link |
 
 **Why this stack (settled):** scale is tiny (200–300 subs/season, ~20 staff), so
 the real criteria are "fewest moving parts after graduation" and "fastest to
@@ -154,7 +181,7 @@ need).
 The security story **is** the project. RLS + a separate `authors` table means a
 Reader cannot read identity even by calling the database directly.
 
-**Tables** (`app/supabase/schema.sql`):
+**Tables** (`app/supabase/migrations/`):
 - `submissions` — `id, title, genre, status, hanover_student, manuscript_path,
   created_at`. **No author identity here** (readers may read this).
 - `authors` — `id, submission_id (unique FK), name, email, mailing_address, bio,
@@ -201,6 +228,40 @@ insert-with-return is fine.)
 
 ## 7. Conventions & gotchas
 
+### The live database is behind the repo — the init migration was never applied
+
+**Verified by probing `qsynlsbltpnhzncpqerz` on Oct 20, 2026.** The live project
+predates the member-management work; `app/supabase/migrations/20261013000000_init.sql`
+has never been pushed.
+
+Present live: `submissions`, `authors`, `members` (has `name` and `active`),
+`member_count()`, `is_editor()`, and the private `manuscripts` bucket.
+Absent live: `member_audit` (404), `is_active_member()` (404), `is_chief_editor()`
+(404), `log_member_change()` (404).
+
+Consequences, all live today:
+- The audit trail cannot write (no table).
+- The Chief Editor cannot read or update other members' rows (no `is_chief_editor()`
+  policy), so the Member Manager Staff tab is effectively empty.
+- Deactivating a member does not revoke access (no `is_active_member()` check).
+- The submission/manuscript read policies live predate the member work. Because
+  `is_active_member()` is absent, the current "active staff" policy **cannot** exist,
+  so reads are likely governed by the older `"authenticated can read submissions"`
+  with `using (true)` — i.e. any signed-in account, not just staff. **Verify with
+  SQL once linked** (`select * from pg_policies;`) before trusting the live read
+  boundary; the authenticated test suite (issue #4) will settle it.
+
+**Fix:** `npm run db:push` (see §3). The init migration is idempotent
+(`IF NOT EXISTS` / `CREATE OR REPLACE` / `DROP POLICY` first) and applies cleanly to
+the already-provisioned remote project.
+
+**Also live:** email confirmation is ON (`mailer_autoconfirm: false`), so self-signup
+requires clicking a confirmation link; and `member_count()` = 1, so the "first sign-up
+becomes Chief Editor" bootstrap no longer fires — a new sign-up joins as a Reader.
+This is why §13 publishes demo accounts.
+
+### Other gotchas
+
 - **Metadata stripping is NOT done yet.** Manuscript files must be scrubbed at
   intake — images (EXIF via `exifr`), PDFs (`pdf-lib`), and `.docx` (a zip with
   author data in `docProps/core.xml`). Post-process server-side (edge function),
@@ -212,7 +273,9 @@ insert-with-return is fine.)
   Providers → Email.
 - **Supabase free tier pauses projects after ~1 week of inactivity** — the
   handoff guide must document the reactivation ritual before each reading
-  period.
+  period. A paused project can only be resumed from a dashboard the reader has
+  no access to, so for the public demo URL this needs a **keep-alive cron**
+  (§13 week 2). The free tier also caps you at **2 active projects**.
 - **Tutorial vs real schema mismatch:** `docs/tutorial/` teaches title-case roles
   (`'Chief Editor'`/`'Reader'`) and a `members` table without `name`, while the
   app + live DB use snake_case + `name`. The tutorial is a self-contained
@@ -224,6 +287,12 @@ insert-with-return is fine.)
   number. Verify with
   `cd docs && bundle exec jekyll build --destination /tmp/opencode/site`
   (expect `done in Xs`, no warnings).
+- **Stray file in the live bucket:** `manuscripts/probe.txt` (6 bytes of text) was
+  created in the live project on Oct 20, 2026 while an agent was verifying that the
+  bucket exists and is private. Anon can upload by policy but cannot delete (403), so
+  it needs the dashboard, `supabase storage rm`, or a service-role call to remove.
+  It is inert — no author data — but should not be left in a project shown to a
+  grader. **Week 1 task in §13.**
 - **OWASP Top 10** is the security checklist; **broken access control** is the
   project's primary risk (the whole product is a permission boundary).
 
@@ -233,27 +302,30 @@ insert-with-return is fine.)
 
 Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
-1. **#1 — Wire the Member Manager to the `members` table.** *Core done:* roles +
-   deactivate persist, RLS gating, audit trail, `is_editor()` checks `active`.
+1. **#1 — Wire the Member Manager to the `members` table.** *Core done in code:*
+   roles + deactivate persist, RLS gating, audit trail, `is_editor()` checks
+   `active`. **Not live** — see the §7 note; `npm run db:push` is the fix.
    *Remaining:* invite links / "join with a code" flow instead of open
-   self-signup.
+   self-signup (scheduled for §13 week 5).
 2. **#2 — Automated testing.** Largely done: Vitest unit + live anon-RLS +
    Playwright UI E2E are green. Remaining is the authenticated layer's
    activation (see #4) and the optional pgTAP run.
 3. **#3 — Strip metadata from uploaded manuscripts at intake** (exifr / pdf-lib /
-   `.docx`), server-side.
-4. **#4 — Activate the authenticated RLS tests.** Provision a throwaway test
-   Supabase project + Chief/Reader accounts, fill `app/.env.test`. The suites
-   `skip` until then.
+   `.docx`), server-side. Scheduled for §13 week 5; the open fork is *where* it
+   runs (Edge Function vs. browser).
+4. **#4 — Activate the authenticated RLS tests.** Needs Chief/Reader accounts and
+   `app/.env.test` filled in. The suites `skip` until then. §13 week 4 reuses the
+   demo accounts from week 2 rather than provisioning a separate project.
 
 ### Other known gaps / next candidates
 - Reader queue → Supabase: a `ratings` table so notes/scores persist, and
-  login-gating the `/reader` routes.
+  login-gating the `/reader` routes. (§13 week 3.)
 - Editor dashboard remainder: reader assignments, internal discussion, decision
   letters, bulk actions.
 - Decision letters + email via Resend (only 3 statuses exist today: Received /
   In review / Shortlist).
-- Production deploy (Netlify/Vercel).
+- ~~Production deploy (Netlify/Vercel)~~ → hosting decided: **GitHub Pages under
+  the existing site** (§5, §13 week 2).
 - Open questions: Advisor role scope; author-reveal timing; whether bios/cover
   letters are collected; final form fields with the club.
 
@@ -343,3 +415,112 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
 Live site: https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/
 (including `/tutorial/`)
+
+Live app (planned, §13 week 2):
+https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/
+
+---
+
+## 13. Live-URL plan (Oct 20 → Nov 24, 2026)
+
+**Deadline:** the class requires a live URL to the working app. Target: **Nov 24, 2026**
+(5 weeks). This matches the proposal's own timeline — weeks 10–11 are "deploy," week 12
+is handoff.
+
+**Not on the critical path:** Kennings' next reading period is next year, so decision
+letters, Resend, invite codes, and the club pilot all come *after* this deadline.
+
+**Decisions made (Oct 20):**
+- **Host:** GitHub Pages, under the existing Jekyll site, at
+  `https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/`.
+  Chosen over Netlify/Vercel to avoid new accounts and keep one deploy pipeline.
+  Consequence: Vite needs a `base` path, `BrowserRouter` needs a matching `basename`,
+  and GitHub Pages needs a `404.html` fallback so deep links like `/app/editor/123`
+  survive a refresh. The app is NOT at the site root — that would break the existing
+  proposal link.
+- **Demo accounts:** publish 1–2 throwaway accounts (a Chief Editor and a Reader) in a
+  "Demo access" box on the login page, and put the same credentials in the README.
+  Publishing credentials for a throwaway project with fake data is *not* a
+  vulnerability: the anon key is `sb_publishable_…` and is public by design. The
+  `service_role` key still must never be committed. A "join with a code" flow
+  (issue #1 remainder) is the nicer artifact and is scheduled for week 5.
+
+### Week 1 — repo is the source of truth; fix the live database
+- Set `git config user.name` / `user.email` (all 6 unpushed commits are currently
+  authored by `root <root@Alexiscomp.localdomain>`).
+- Push the 6 unpushed commits, then commit the uncommitted work
+  (`app/supabase/migrations/`, `app/supabase/config.toml`, `app/package.json`,
+  `AGENTS.md`).
+- One-time CLI auth: `npm run db:login` (paste a personal access token) →
+  `npm run db:link` (paste the project DB password).
+- `npm run db:push` — applies `20261013000000_init.sql`, so live finally gains
+  `member_audit`, `is_active_member()`, `is_chief_editor()`, the audit trigger, and
+  the corrected policies. **Highest-value hour of the project:** it is the difference
+  between the security story being real and being aspirational.
+- Delete the stray `manuscripts/probe.txt` left by agent probing (see §7).
+
+### Week 2 — a demo-able database, and a live URL
+- `app/supabase/seed.sql` (does not exist yet — `config.toml` already points at
+  `./seed.sql`, so `db:reset` fails without it). Seed demo submissions, authors, and
+  ratings, reusing the titles/text already in `app/src/data/submissions.ts` so the
+  demo looks identical before and after the reader flow goes live. Must be idempotent
+  (`on conflict do nothing`).
+- A committed seed script that creates the demo auth users via the Admin API, reading
+  `SUPABASE_SERVICE_ROLE_KEY` from the environment (never committed).
+- `supabase config push` to turn off email confirmation — **but first fix `site_url`
+  and `additional_redirect_urls` in `config.toml`**, which still point at
+  `http://127.0.0.1:3000`. Pushing those as-is breaks auth redirects on the live site.
+- Commit `app/.env.production` (project URL + publishable key only). Public by design,
+  so the Pages build needs no secrets and a fresh clone runs immediately.
+- Deploy to Pages at `/app/`: Vite `base`, `BrowserRouter basename`, and a root
+  `404.html` that bounces deep links into the SPA.
+- **Keep-alive cron.** Free-tier Supabase pauses after ~7 days idle, and a paused
+  project can only be resumed from a dashboard the grader has no access to. A
+  scheduled GitHub Action hitting the project every few days prevents that.
+
+### Week 3 — make the reader flow real
+- New migration: a `ratings` table (score, notes, recusal) with RLS — a reader writes
+  only their own row, editors read all, readers never touch `authors`.
+- Rewrite `ReaderQueuePage` / `ReaderSubmissionPage` onto real data and gate `/reader`
+  behind login. Today this is the most visible "not really working" part: a grader
+  clicks "Reader queue" and sees fake samples.
+
+### Week 4 — activate the tests, finish the editor workflow
+- Point `.env.test` at the seeded accounts → the authenticated RLS tests and the
+  Playwright role suite **stop skipping**. Closes issues #2 and #4.
+- Editor dashboard: real statuses (Accepted / Rejected / Hold, not just 3), and the
+  ratings summary backed by real data.
+
+### Week 5 — metadata stripping, docs, buffer
+- Strip manuscript metadata at intake (issue #3). See the open fork below.
+- `npm run db:export` — the proposal promises every record is exportable; this is a
+  grading line item.
+- Final docs pass; fix the dangling §2 → §7 cross-reference.
+
+**After the 5 weeks:** decision letters + Resend, join-with-a-code, real club pilot.
+
+### Open forks (decide before week 5)
+1. **Where does metadata stripping run?** (a) *Edge Function* — correct, and §7 already
+   says "not in the browser," but it is Deno and roughly 150 lines. (b) *Browser-side*
+   (`exifr` + `pdf-lib`) — an afternoon, but the anon key is public, so anyone can
+   upload straight to Storage and skip the app. (c) *Strictest* — drop the anon
+   upload policy and route every upload through the Edge Function, so the function is
+   the only door; airtight, but rewrites `SubmitPage`'s upload path.
+2. **Free tier vs. paid.** The 7-day pause is the one thing that can silently break the
+   live URL after handoff. A keep-alive cron is free but can fail; a paid plan cannot
+   pause. A pause only breaks the *data*, not the *page* — but a grader still sees a
+   broken queue.
+3. **Seed the live project, or leave it empty?** Recommended: seed it, and label the
+   rows clearly as sample data.
+
+### Credentials needed to start week 1
+1. **Supabase personal access token** — Dashboard → Account → Personal Access Tokens.
+   Needed for `npm run db:login`.
+2. **Project database password** — Dashboard → Project Settings → Database. Needed for
+   `npm run db:link`.
+3. **Git name and email** — so commits stop being authored by `root`.
+
+### Useful CLI commands confirmed present in v2.120.0
+`supabase db query --linked` (runs SQL against the linked project — good for auditing
+`pg_policies` without a DB password), `supabase config push`, `supabase db push
+--include-seed`, `supabase storage rm`, `supabase functions deploy`.
