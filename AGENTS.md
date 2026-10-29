@@ -481,11 +481,12 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   `http://127.0.0.1:3000`. Pushing those as-is breaks auth redirects on the live site.
   Turning confirmation off is also what makes the demo Reader account a 20-second
   signup instead of an email-confirmation fight.
-- **Still open: keep-alive cron.** Free-tier Supabase pauses after ~7 days idle, and a
-  paused project can only be resumed from a dashboard the grader has no access to. The
-  project already paused once (Oct 27) and cost two days of confusion. A scheduled
-  GitHub Action hitting the project every few days prevents that. **Highest-value
-  remaining item after the deploy.**
+- ~~**Keep-alive cron**~~ — **done** (`.github/workflows/keep-alive.yml`, Oct 29). Pings
+  `app/.env.production`'s REST endpoint every 3 days and fails loudly if the answer
+  isn't 200, so a paused project shows up as a red run instead of a broken app. No
+  secrets needed. **Caveat:** GitHub disables scheduled workflows after 60 days of
+  repository inactivity — a push re-enables them. After handoff, if the cron stops, any
+  commit restarts it. The free-tier 7-day pause window is what it defends against.
 
 ### Week 3 — make the reader flow real
 - New migration: a `ratings` table (score, notes, recusal) with RLS — a reader writes
