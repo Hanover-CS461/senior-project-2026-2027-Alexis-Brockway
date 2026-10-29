@@ -20,12 +20,20 @@ interface Author {
   bio: string | null
 }
 
+interface RatingRow {
+  score: number | null
+  notes: string
+  recused: boolean
+  created_at: string
+}
+
 function EditorSubmissionPage() {
   const { submissionId } = useParams()
   const [submission, setSubmission] = useState<Submission | null>(null)
   const [author, setAuthor] = useState<Author | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [ratings, setRatings] = useState<RatingRow[]>([])
   const [missing, setMissing] = useState(false)
 
   useEffect(() => {
@@ -60,6 +68,14 @@ function EditorSubmissionPage() {
         .from('manuscripts')
         .createSignedUrl(sub.manuscript_path, 3600)
       if (!cancelled) setFileUrl(signed?.signedUrl ?? null)
+
+      // Editors read every rating (RLS: "editors read all ratings").
+      const { data: ratingRows } = await supabase
+        .from('ratings')
+        .select('score, notes, recused, created_at')
+        .eq('submission_id', submissionId)
+        .order('created_at', { ascending: true })
+      if (!cancelled) setRatings(ratingRows ?? [])
     }
 
     load()
@@ -148,7 +164,48 @@ function EditorSubmissionPage() {
 
       <div className="ratings-box">
         <h2>Ratings</h2>
-        <p className="empty">Scoring isn't wired to the database yet.</p>
+        {ratings.length === 0 ? (
+          <p className="empty">No reader scores yet.</p>
+        ) : (
+          <>
+            <p className="queue-tag">
+              {(() => {
+                const scored = ratings.filter(
+                  (r) => !r.recused && r.score != null,
+                )
+                if (scored.length === 0) return 'No scores cast yet'
+                const avg =
+                  scored.reduce((sum, r) => sum + (r.score ?? 0), 0) /
+                  scored.length
+                return `${avg.toFixed(1)} / 5 average from ${scored.length} ${
+                  scored.length === 1 ? 'reader' : 'readers'
+                }`
+              })()}
+              {ratings.some((r) => r.recused) && (
+                <>
+                  {' · '}
+                  {ratings.filter((r) => r.recused).length} recused
+                </>
+              )}
+            </p>
+            <ul className="audit-list">
+              {ratings
+                .filter((r) => r.notes.trim() !== '')
+                .map((r, i) => (
+                  <li key={i}>
+                    {r.recused ? 'Recused reader' : 'Reader'} note:{' '}
+                    {r.notes}{' '}
+                    <span className="hint">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </span>
+                  </li>
+                ))}
+            </ul>
+            {ratings.every((r) => r.notes.trim() === '') && (
+              <p className="hint">No written notes yet.</p>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
