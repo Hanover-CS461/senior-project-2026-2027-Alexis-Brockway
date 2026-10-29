@@ -2,7 +2,7 @@
 
 *Read this first.* This is the onboarding/handoff file for any AI agent (or
 human) working in this repo. It replaces the old `project-context.md`. Last
-updated **Oct 20, 2026**.
+updated **Oct 29, 2026**.
 
 ---
 
@@ -22,7 +22,7 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Oct 20, 2026)
+## 2. Current status (Oct 29, 2026)
 
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
@@ -32,14 +32,12 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` + `authors` rows).
 - **Auth** — DONE: in-app sign-up/sign-in; the first sign-up becomes Chief
   Editor (enforced by RLS), everyone after joins as Reader. **On the live
-  project this bootstrap no longer fires** — `member_count()` is 1, so a new
+  project this bootstrap no longer fires** — `member_count()` is 2, so a new
   sign-up joins as a Reader, and email confirmation is still ON. See §7.
 - **Editor dashboard** — Queue reads real data; `/editor/:id` reads real
-  submission + author and saves status. **Member Manager is implemented against
-  the `members` table** (role changes + soft deactivate/reactivate) with an audit
-  trail — in `app/supabase/migrations/20261013000000_init.sql`, but **not yet
-  applied to the live project**. Read the "live database is behind the repo"
-  note in §7 before trusting any of it; §13 has the fix.
+  submission + author and saves status. **Member Manager is live**: role changes,
+  soft deactivate/reactivate, and the audit trail all work against real rows
+  (the init migration was applied to the live project on Oct 29 — see §7).
 - **Reader queue** — still **fake data** (`app/src/data/*.ts`); notes/scores are
   local state only and are **not** login-gated yet.
 - **Tests** — Vitest + Playwright are set up and green (unit + anon-RLS + UI
@@ -228,37 +226,37 @@ insert-with-return is fine.)
 
 ## 7. Conventions & gotchas
 
-### The live database is behind the repo — the init migration was never applied
+### The live database matches the repo (as of Oct 29, 2026)
 
-**Verified by probing `qsynlsbltpnhzncpqerz` on Oct 20, 2026.** The live project
-predates the member-management work; `app/supabase/migrations/20261013000000_init.sql`
-has never been pushed.
+**Verified by probing `qsynlsbltpnhzncpqerz` on Oct 29, 2026.** The init migration is
+applied: all four tables (`submissions`, `authors`, `members`, `member_audit`) and all
+four helpers (`member_count()`, `is_editor()`, `is_active_member()`,
+`is_chief_editor()`) respond, the Member Manager works against real rows, and
+`npm test` is green (12 passed, 3 skipped).
 
-Present live: `submissions`, `authors`, `members` (has `name` and `active`),
-`member_count()`, `is_editor()`, and the private `manuscripts` bucket.
-Absent live: `member_audit` (404), `is_active_member()` (404), `is_chief_editor()`
-(404), `log_member_change()` (404).
+It was applied by **pasting `app/supabase/migrations/20261013000000_init.sql` into the
+dashboard SQL editor**, not with `npm run db:push` — the CLI has never been linked.
+Two consequences:
+- Nothing is recorded in `supabase_migrations.schema_migrations`, so the CLI thinks the
+  migration is unapplied. It is idempotent, so a later `db:push` is safe (it re-runs
+  harmlessly) — but expect it to try.
+- Anything needing `--linked` (`db:push`, `db query`, `config push`) is unavailable
+  until `npm run db:login` + `db:link` succeed. **The SQL editor is the working path.**
 
-Consequences, all live today:
-- The audit trail cannot write (no table).
-- The Chief Editor cannot read or update other members' rows (no `is_chief_editor()`
-  policy), so the Member Manager Staff tab is effectively empty.
-- Deactivating a member does not revoke access (no `is_active_member()` check).
-- The submission/manuscript read policies live predate the member work. Because
-  `is_active_member()` is absent, the current "active staff" policy **cannot** exist,
-  so reads are likely governed by the older `"authenticated can read submissions"`
-  with `using (true)` — i.e. any signed-in account, not just staff. **Verify with
-  SQL once linked** (`select * from pg_policies;`) before trusting the live read
-  boundary; the authenticated test suite (issue #4) will settle it.
-
-**Fix:** `npm run db:push` (see §3). The init migration is idempotent
-(`IF NOT EXISTS` / `CREATE OR REPLACE` / `DROP POLICY` first) and applies cleanly to
-the already-provisioned remote project.
+**Lesson: a paused project drops its DNS record.** On Oct 27 the project read as
+NXDOMAIN — indistinguishable from deletion — and was wrongly written off as dead. It
+was merely paused (free tier, ~1 week idle). The reliable signal is HTTP, not DNS: a
+paused project resolves and returns Cloudflare **521 "Web server is down"**, and
+"Restore project" brings the data back intact. Check the dashboard before concluding a
+project is gone. Restore takes a few minutes and the schema cache lags — right after a
+restore, tables may 404 with `PGRST205` before they reappear.
 
 **Also live:** email confirmation is ON (`mailer_autoconfirm: false`), so self-signup
-requires clicking a confirmation link; and `member_count()` = 1, so the "first sign-up
-becomes Chief Editor" bootstrap no longer fires — a new sign-up joins as a Reader.
-This is why §13 publishes demo accounts.
+requires clicking a confirmation link, and `member_count()` is 2, so the "first sign-up
+becomes Chief Editor" bootstrap will not fire again — new sign-ups join as `reader`.
+The current Chief Editor was promoted by hand:
+`update public.members set role = 'chief_editor' where email = '…';`. This is why §13
+publishes demo accounts.
 
 ### Other gotchas
 
@@ -445,19 +443,21 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   `service_role` key still must never be committed. A "join with a code" flow
   (issue #1 remainder) is the nicer artifact and is scheduled for week 5.
 
-### Week 1 — repo is the source of truth; fix the live database
-- Set `git config user.name` / `user.email` (all 6 unpushed commits are currently
-  authored by `root <root@Alexiscomp.localdomain>`).
-- Push the 6 unpushed commits, then commit the uncommitted work
-  (`app/supabase/migrations/`, `app/supabase/config.toml`, `app/package.json`,
-  `AGENTS.md`).
-- One-time CLI auth: `npm run db:login` (paste a personal access token) →
-  `npm run db:link` (paste the project DB password).
-- `npm run db:push` — applies `20261013000000_init.sql`, so live finally gains
-  `member_audit`, `is_active_member()`, `is_chief_editor()`, the audit trigger, and
-  the corrected policies. **Highest-value hour of the project:** it is the difference
-  between the security story being real and being aspirational.
-- Delete the stray `manuscripts/probe.txt` left by agent probing (see §7).
+### Week 1 — repo is the source of truth; fix the live database ✅ (Oct 29)
+- ~~Set `git config user.name` / `user.email`~~ — done: `Alexis Brockway
+  <155980055+Alexis-Brockway@users.noreply.github.com>`.
+- ~~Push the 6 unpushed commits, then commit the uncommitted work~~ — done; all 8
+  commits are on `origin/main` as of `3e1d965`.
+- ~~`npm run db:push` to apply `20261013000000_init.sql`~~ — **applied, but not via the
+  CLI.** The project was found paused (not deleted) on Oct 27, restored, and the
+  migration was pasted into the SQL editor on Oct 29. Live now has `member_audit`,
+  `is_active_member()`, `is_chief_editor()`, the audit trigger, and the corrected
+  policies. The security story is real. See §7.
+- **Still open:** `npm run db:login` + `db:link` have never succeeded (no Supabase PAT
+  cached), so `--linked` commands are unavailable. Needed before `config push` in
+  week 2 — but the SQL editor covers everything else.
+- **Still open:** delete the stray `manuscripts/probe.txt` (see §7). Needs the
+  dashboard, `supabase storage rm`, or a service-role call — anon cannot delete.
 
 ### Week 2 — a demo-able database, and a live URL
 - `app/supabase/seed.sql` (does not exist yet — `config.toml` already points at
