@@ -38,8 +38,12 @@ Submissions page on Sep 23, 2026 and live in the app.
   submission + author and saves status. **Member Manager is live**: role changes,
   soft deactivate/reactivate, and the audit trail all work against real rows
   (the init migration was applied to the live project on Oct 29 — see §7).
-- **Reader queue** — still **fake data** (`app/src/data/*.ts`); notes/scores are
-  local state only and are **not** login-gated yet.
+- **Reader queue** — **live on real data** (Oct 29). `ratings` table with RLS (a reader
+  writes/reads only their own row while active; editors read all), queue reads
+  `submissions` and splits into To read / Scored, detail page opens the manuscript via
+  a signed URL and saves score, notes and recusal. `/reader` is login-gated. The editor
+  submission page shows the average of non-recused scores, the recusal count, and the
+  notes. Seeded with six sample submissions (`app/supabase/seed.sql`).
 - **Tests** — Vitest + Playwright are set up and green (unit + anon-RLS + UI
   E2E). The authenticated reader-vs-editor suites are written but **skipped**
   until test credentials are supplied; activating them is tracked in issue #4.
@@ -135,7 +139,7 @@ All app commands run from `app/`:
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed) |
 | `app/src/lib/` | Current | `supabase.ts` (client), `auth.tsx` (AuthProvider/`useAuth`), `roles.ts` (pure role helpers), `membership.ts` (`joinClub` + `MembershipClient` seam) |
 | `app/src/lib/*.test.ts` | Current | `roles`, `membership` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
-| `app/src/data/` | Mixed | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). `submissions/authors/manuscripts/ratings.ts` are still fake reader data |
+| `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
 | `app/supabase/config.toml` | Current | Supabase project settings as code (project ref, auth, storage, ports) |
 | `app/supabase/tests/rls.test.sql` | Current | pgTAP policy tests (needs Supabase CLI + Docker) |
@@ -488,12 +492,18 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   repository inactivity — a push re-enables them. After handoff, if the cron stops, any
   commit restarts it. The free-tier 7-day pause window is what it defends against.
 
-### Week 3 — make the reader flow real
-- New migration: a `ratings` table (score, notes, recusal) with RLS — a reader writes
-  only their own row, editors read all, readers never touch `authors`.
-- Rewrite `ReaderQueuePage` / `ReaderSubmissionPage` onto real data and gate `/reader`
-  behind login. Today this is the most visible "not really working" part: a grader
-  clicks "Reader queue" and sees fake samples.
+### Week 3 — make the reader flow real ✅ (Oct 29)
+- ~~New migration: a `ratings` table (score, notes, recusal) with RLS~~ — done
+  (`20261029130000_ratings.sql`). A reader writes and reads only their own row while
+  active; editors read all; readers still have no policy on `authors`.
+- ~~Rewrite `ReaderQueuePage` / `ReaderSubmissionPage` onto real data and gate `/reader`
+  behind login~~ — done. Queue splits on the reader's own ratings (To read / Scored),
+  the detail page opens the manuscript through a signed URL and upserts score, notes
+  and recusal, and `/reader` is behind `RequireAuth`. The fake data files were deleted.
+- **Bonus:** the editor submission page now shows the average of non-recused scores,
+  the recusal count, and the written notes — replacing the "not wired up" placeholder.
+  Reader names are deliberately absent: only the Chief Editor can read `members`, so
+  attributing notes needs a policy decision.
 
 ### Week 4 — activate the tests, finish the editor workflow
 - Point `.env.test` at the seeded accounts → the authenticated RLS tests and the
