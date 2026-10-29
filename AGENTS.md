@@ -27,7 +27,7 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
   Jekyll site). Backend is **Supabase**, live in project `qsynlsbltpnhzncpqerz`
-  (free tier). **Not deployed yet** — the live URL is the §13 goal.
+  (free tier). **Deployed and live** at the §12 URL under `/app/` (Oct 29).
 - **Submission flow** — DONE and wired to Supabase (file → Storage, then
   `submissions` + `authors` rows).
 - **Auth** — DONE: in-app sign-up/sign-in; the first sign-up becomes Chief
@@ -143,9 +143,10 @@ All app commands run from `app/`:
 | `app/playwright.config.ts`, `app/vite.config.ts`, `app/test/setup.ts` | Current | Test/build config; setup loads `.env.test` |
 | `app/.env` / `app/.env.test` | Gitignored | Supabase creds / test accounts |
 | `app/.env.test.example` | Current | Template for the authenticated tests |
-| `app/.env.example` | **Planned** (§13 wk 2) | Project URL + publishable key, so a fresh clone runs with no setup |
+| `app/.env.production` | Current | Committed project URL + publishable key, so the Pages build needs no secrets |
 | `app/supabase/seed.sql` | **Planned** (§13 wk 2) | Demo submissions/authors/ratings. **Does not exist yet**, but `config.toml` already points `db.seed.sql_paths` at `./seed.sql`, so `db:reset` fails without it |
 | `app/supabase/functions/` | **Planned** (§13 wk 5) | Edge Functions — metadata stripping (issue #3), decision-letter email |
+| `docs/404.html` | Current | GitHub Pages fallback: bounces `/app/*` deep links back into the SPA, leaves real 404s alone |
 | `netlify.toml` / `vercel.json` | Not needed | Hosting is GitHub Pages (§5); no static-host config required |
 
 The committed `docs/_site` is generated output — don't hand-edit.
@@ -414,7 +415,7 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 Live site: https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/
 (including `/tutorial/`)
 
-Live app (planned, §13 week 2):
+Live app (live since Oct 29, 2026):
 https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/
 
 ---
@@ -459,24 +460,32 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
 - **Still open:** delete the stray `manuscripts/probe.txt` (see §7). Needs the
   dashboard, `supabase storage rm`, or a service-role call — anon cannot delete.
 
-### Week 2 — a demo-able database, and a live URL
-- `app/supabase/seed.sql` (does not exist yet — `config.toml` already points at
-  `./seed.sql`, so `db:reset` fails without it). Seed demo submissions, authors, and
-  ratings, reusing the titles/text already in `app/src/data/submissions.ts` so the
-  demo looks identical before and after the reader flow goes live. Must be idempotent
-  (`on conflict do nothing`).
-- A committed seed script that creates the demo auth users via the Admin API, reading
-  `SUPABASE_SERVICE_ROLE_KEY` from the environment (never committed).
-- `supabase config push` to turn off email confirmation — **but first fix `site_url`
-  and `additional_redirect_urls` in `config.toml`**, which still point at
+### Week 2 — a demo-able database, and a live URL (deploy done Oct 29)
+- ~~Commit `app/.env.production`~~ and ~~deploy to Pages at `/app/`~~ — **done**. Vite
+  `base` is applied only on build (dev stays at `/`), `BrowserRouter basename` comes
+  from `import.meta.env.BASE_URL`, and `docs/404.html` stashes deep links in
+  `sessionStorage` for `main.tsx` to restore before the router mounts. Verified with
+  Playwright against the live URL: `/app/` renders, `/app/submit` restores and lands on
+  `/app/submit/genre`, `/app/editor/123` restores then gates to `/app/login`, and
+  `/tutorial/does-not-exist` still 404s. **Pushing a workflow change needs the
+  `workflow` token scope** (`gh auth refresh -s workflow`).
+- **Still open:** `app/supabase/seed.sql` (does not exist yet — `config.toml` already
+  points at `./seed.sql`, so `db:reset` fails without it). Seed demo submissions,
+  authors, and ratings, reusing the titles/text already in `app/src/data/submissions.ts`
+  so the demo looks identical before and after the reader flow goes live. Must be
+  idempotent (`on conflict do nothing`).
+- **Still open:** a committed seed script that creates the demo auth users via the Admin
+  API, reading `SUPABASE_SERVICE_ROLE_KEY` from the environment (never committed).
+- **Still open:** `supabase config push` to turn off email confirmation — **but first fix
+  `site_url` and `additional_redirect_urls` in `config.toml`**, which still point at
   `http://127.0.0.1:3000`. Pushing those as-is breaks auth redirects on the live site.
-- Commit `app/.env.production` (project URL + publishable key only). Public by design,
-  so the Pages build needs no secrets and a fresh clone runs immediately.
-- Deploy to Pages at `/app/`: Vite `base`, `BrowserRouter basename`, and a root
-  `404.html` that bounces deep links into the SPA.
-- **Keep-alive cron.** Free-tier Supabase pauses after ~7 days idle, and a paused
-  project can only be resumed from a dashboard the grader has no access to. A
-  scheduled GitHub Action hitting the project every few days prevents that.
+  Turning confirmation off is also what makes the demo Reader account a 20-second
+  signup instead of an email-confirmation fight.
+- **Still open: keep-alive cron.** Free-tier Supabase pauses after ~7 days idle, and a
+  paused project can only be resumed from a dashboard the grader has no access to. The
+  project already paused once (Oct 27) and cost two days of confusion. A scheduled
+  GitHub Action hitting the project every few days prevents that. **Highest-value
+  remaining item after the deploy.**
 
 ### Week 3 — make the reader flow real
 - New migration: a `ratings` table (score, notes, recusal) with RLS — a reader writes
