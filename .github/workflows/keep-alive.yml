@@ -1,0 +1,56 @@
+name: Keep Supabase awake
+
+# The free tier pauses a project after ~7 days with no activity, and a paused
+# project returns Cloudflare 521 to every request. From the outside that looks
+# like the app is broken, and only someone with dashboard access can restore it.
+# This workflow pings the database often enough that it never goes idle.
+#
+# Note: GitHub disables scheduled workflows after 60 days of repository
+# inactivity. A push re-enables them, so if this ever stops firing, make any
+# commit. See AGENTS.md §13.
+
+on:
+  schedule:
+    # 06:00 UTC every 3 days — comfortably inside the 7-day pause window.
+    - cron: '0 6 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Credentials come from app/.env.production, the same file the app build
+      # uses, so there is one source of truth. Both values are public by design
+      # (the publishable key is inlined into the frontend bundle), so this needs
+      # no repository secrets.
+      - name: Ping the REST API
+        run: |
+          set -a
+          . ./app/.env.production
+          set +a
+
+          url="$VITE_SUPABASE_URL/rest/v1/submissions?select=id&limit=1"
+          code=$(curl -sS -o /tmp/body.txt -w '%{http_code}' --max-time 30 \
+            "$url" -H "apikey: $VITE_SUPABASE_ANON_KEY") || code="000"
+
+          echo "HTTP $code"
+          echo "Body: $(head -c 300 /tmp/body.txt)"
+
+          # 200 means the database answered. Anon has no SELECT policy on
+          # submissions, so an empty array is the healthy response — we are
+          # checking that the project is awake, not that it has data.
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase answered $code instead of 200. A paused project returns 521 — restore it from the Supabase dashboard, then re-run this workflow."
+            exit 1
+          fi
+          echo "Supabase is awake."
