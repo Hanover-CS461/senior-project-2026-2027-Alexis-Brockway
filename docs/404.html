@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found</title>
+    <script>
+      // GitHub Pages serves this file for any path it cannot find, and the app is
+      // a client-side router, so a refresh on /app/editor/123 lands here. If the
+      // missing path belongs to the app, remember it and bounce to the app root;
+      // main.tsx restores the URL before react-router reads it. Anything else is
+      // a genuine 404 on the Jekyll site and falls through to the message below.
+      (function () {
+        var base = '/senior-project-2026-2027-Alexis-Brockway/app/'
+        if (window.location.pathname.indexOf(base) === 0) {
+          try {
+            window.sessionStorage.setItem(
+              'kennings:redirect',
+              window.location.pathname + window.location.search + window.location.hash
+            )
+          } catch (e) {
+            // Storage blocked (private mode, strict settings): still send them
+            // to the app, just without the deep link.
+          }
+          window.location.replace(base)
+        }
+      })()
+    </script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        max-width: 40rem;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+        color: #1f2328;
+        line-height: 1.5;
+      }
+      a { color: #0969da; }
+      code { background: #f6f8fa; padding: 0.1rem 0.3rem; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Page not found</h1>
+    <p>
+      There's nothing at <code id="path">this address</code>. Try the
+      <a href="/senior-project-2026-2027-Alexis-Brockway/">project site</a> or the
+      <a href="/senior-project-2026-2027-Alexis-Brockway/app/">app</a>.
+    </p>
+    <script>
+      document.getElementById('path').textContent = window.location.pathname
+    </script>
+  </body>
+</html>
