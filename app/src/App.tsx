@@ -41,8 +41,22 @@ function App() {
           <Route path="/submit/genre/:genreSlug" element={<GenreRulesPage />} />
           <Route path="/submit" element={<SubmitPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/reader" element={<ReaderQueuePage />} />
-          <Route path="/reader/:submissionId" element={<ReaderSubmissionPage />} />
+          <Route
+            path="/reader"
+            element={
+              <RequireAuth>
+                <ReaderQueuePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/reader/:submissionId"
+            element={
+              <RequireAuth>
+                <ReaderSubmissionPage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/editor"
             element={

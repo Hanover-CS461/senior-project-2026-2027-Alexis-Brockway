@@ -1,38 +1,23 @@
 import { expect, test } from '@playwright/test'
 
-const AUTHOR_NAMES = [
-  'Margaret Okafor',
-  'David Reyes',
-  'Priya Natarajan',
-  'Amelia Chen',
-  'Jonas Weber',
-  'Sienna Brooks',
-]
+// The reader queue is behind the login wall and reads real rows from Supabase,
+// so what an anonymous visitor can prove here is the gate itself. The
+// "no author identity" guarantee for a signed-in reader lives in
+// authenticated.spec.ts, where a real reader session is available.
 
-test('the reader queue never reveals author identity', async ({ page }) => {
+test('the reader queue is behind the login wall', async ({ page }) => {
   await page.goto('/reader')
-  await expect(page.getByRole('heading', { name: 'Reader queue' })).toBeVisible()
-  await expect(page.getByText('Never the author')).toBeVisible()
-
-  await expect(page.locator('.queue-author')).toHaveCount(0)
-
-  const body = await page.locator('body').innerText()
-  for (const name of AUTHOR_NAMES) {
-    expect(body).not.toContain(name)
-  }
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(
+    page.getByRole('heading', { name: 'Staff sign in' }),
+  ).toBeVisible()
 })
 
-test('the reader detail page shows the manuscript but no author', async ({
+test('a reader submission page is behind the login wall too', async ({
   page,
 }) => {
-  await page.goto('/reader/sub-1')
-  await expect(
-    page.getByRole('heading', { name: 'The Last Ferry' }),
-  ).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Your notes' })).toBeVisible()
-
-  const body = await page.locator('body').innerText()
-  for (const name of AUTHOR_NAMES) {
-    expect(body).not.toContain(name)
-  }
+  // A well-formed but non-existent submission id: the gate must stop the
+  // request before any database lookup happens.
+  await page.goto('/reader/00000000-0000-4000-8000-000000000000')
+  await expect(page).toHaveURL(/\/login$/)
 })

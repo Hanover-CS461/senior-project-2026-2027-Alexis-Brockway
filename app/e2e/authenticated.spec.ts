@@ -48,4 +48,33 @@ test.describe('authenticated roles', () => {
       page.getByRole('heading', { name: 'Editor dashboard' }),
     ).toBeVisible()
   })
+
+  test('a signed-in reader sees the queue but never author identity', async ({
+    page,
+  }) => {
+    await signIn(
+      page,
+      process.env.TEST_READER_EMAIL!,
+      process.env.TEST_READER_PASSWORD!,
+    )
+    await page.goto('/reader')
+    await expect(
+      page.getByRole('heading', { name: 'Reader queue' }),
+    ).toBeVisible()
+
+    // The seeded demo authors. A reader must not see any of them, because
+    // readers have no SELECT policy on `authors` at all — this asserts the
+    // database boundary through the UI, not a hidden CSS class.
+    const body = await page.locator('body').innerText()
+    for (const name of [
+      'Margaret Okafor',
+      'David Reyes',
+      'Priya Natarajan',
+      'Amelia Chen',
+      'Jonas Weber',
+      'Sienna Brooks',
+    ]) {
+      expect(body).not.toContain(name)
+    }
+  })
 })
