@@ -8,14 +8,23 @@ import { describe, expect, it } from 'vitest'
 // Credentials come from app/.env.test (see .env.test.example). If they are not
 // set, the whole suite is skipped.
 
-const url = process.env.TEST_SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
-const anonKey =
-  process.env.TEST_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY
+// A blank line in .env.test must mean "not configured", not an empty string:
+// `??` alone would keep '' and the whole suite would skip even though the
+// template tells people to leave these blank. Trim and treat '' as absent.
+function optional(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
 
-const readerEmail = process.env.TEST_READER_EMAIL
-const readerPassword = process.env.TEST_READER_PASSWORD
-const chiefEmail = process.env.TEST_CHIEF_EMAIL
-const chiefPassword = process.env.TEST_CHIEF_PASSWORD
+const url = optional(process.env.TEST_SUPABASE_URL) ?? import.meta.env.VITE_SUPABASE_URL
+const anonKey =
+  optional(process.env.TEST_SUPABASE_ANON_KEY) ??
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+
+const readerEmail = optional(process.env.TEST_READER_EMAIL)
+const readerPassword = optional(process.env.TEST_READER_PASSWORD)
+const chiefEmail = optional(process.env.TEST_CHIEF_EMAIL)
+const chiefPassword = optional(process.env.TEST_CHIEF_PASSWORD)
 
 const hasCreds = Boolean(
   url && anonKey && readerEmail && readerPassword && chiefEmail && chiefPassword,
