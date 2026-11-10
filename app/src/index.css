@@ -243,6 +243,21 @@ p {
   color: #15803d;
 }
 
+.badge-accepted {
+  background: var(--teal);
+  color: #fff;
+}
+
+.badge-hold {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .queue-genre {
   color: var(--teal);
   font-size: 14px;
@@ -331,6 +346,54 @@ p {
   background: var(--bg);
   color: var(--ink);
   margin-right: 12px;
+}
+
+.status-box h3 {
+  font-size: 15px;
+  color: var(--ink);
+  margin: 22px 0 4px;
+}
+
+.decision-record {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.decision-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.decision-buttons .btn {
+  margin-top: 0;
+}
+
+.decision-accepted {
+  background: var(--teal);
+}
+
+.decision-hold {
+  background: #b45309;
+}
+
+.decision-rejected {
+  background: #b91c1c;
+}
+
+.btn-quiet {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  padding: 4px 10px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .members {

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getGenre, generalRequirements } from '../data/genres'
 import { supabase } from '../lib/supabase'
+import { DEFAULT_STATUS } from '../lib/statuses'
 
 const submissionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -73,7 +74,7 @@ function SubmitPage() {
         id: submissionId,
         title: values.title,
         genre: genre.name,
-        status: 'Received',
+        status: DEFAULT_STATUS,
         hanover_student: values.hanoverStudent,
         manuscript_path: filePath,
       })

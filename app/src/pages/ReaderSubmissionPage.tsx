@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { readerStatus } from '../lib/statuses'
 
 interface Submission {
   id: string
@@ -122,7 +123,7 @@ function ReaderSubmissionPage() {
 
       <h1>{submission.title}</h1>
       <p className="queue-genre">
-        {submission.genre} · {submission.status}
+        {submission.genre} · {readerStatus(submission.status).label}
       </p>
 
       <div className="manuscript">

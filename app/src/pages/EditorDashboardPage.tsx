@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import MemberManager from '../components/MemberManager'
+import { STATUSES, badgeClass } from '../lib/statuses'
 
-const statuses = ['All', 'Received', 'In review', 'Shortlist'] as const
+type Filter = 'All' | string
+
+const statuses: Filter[] = ['All', ...STATUSES.map((s) => s.value)]
 
 interface QueueItem {
   id: string
@@ -17,7 +20,7 @@ interface QueueItem {
 
 function EditorDashboardPage() {
   const [view, setView] = useState<'queue' | 'staff'>('queue')
-  const [status, setStatus] = useState<(typeof statuses)[number]>('All')
+  const [status, setStatus] = useState<Filter>('All')
   const [items, setItems] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -119,11 +122,7 @@ function EditorDashboardPage() {
                   <Link to={`/editor/${s.id}`}>
                     <div className="queue-item-top">
                       <h2>{s.title}</h2>
-                      <span
-                        className={`badge badge-${s.status.toLowerCase().replace(' ', '-')}`}
-                      >
-                        {s.status}
-                      </span>
+                      <span className={badgeClass(s.status)}>{s.status}</span>
                     </div>
                     <p className="queue-genre">{s.genre}</p>
                     <p className="queue-author">

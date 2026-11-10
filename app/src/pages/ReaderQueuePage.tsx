@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { readerStatus } from '../lib/statuses'
 
 interface QueueItem {
   id: string
@@ -98,24 +99,23 @@ function ReaderQueuePage() {
         </p>
       ) : (
         <ul className="queue-list">
-          {visible.map((s) => (
-            <li key={s.id} className="queue-item">
-              <Link to={`/reader/${s.id}`}>
-                <div className="queue-item-top">
-                  <h2>{s.title}</h2>
-                  <span
-                    className={`badge badge-${s.status.toLowerCase().replace(' ', '-')}`}
-                  >
-                    {s.status}
-                  </span>
-                </div>
-                <p className="queue-genre">{s.genre}</p>
-                <p className="queue-excerpt">
-                  Received {new Date(s.created_at).toLocaleDateString()}
-                </p>
-              </Link>
-            </li>
-          ))}
+          {visible.map((s) => {
+            const shown = readerStatus(s.status)
+            return (
+              <li key={s.id} className="queue-item">
+                <Link to={`/reader/${s.id}`}>
+                  <div className="queue-item-top">
+                    <h2>{s.title}</h2>
+                    <span className={shown.badge}>{shown.label}</span>
+                  </div>
+                  <p className="queue-genre">{s.genre}</p>
+                  <p className="queue-excerpt">
+                    Received {new Date(s.created_at).toLocaleDateString()}
+                  </p>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

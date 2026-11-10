@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-
-const statuses = ['Received', 'In review', 'Shortlist'] as const
+import {
+  DECISION_STATUSES,
+  WORKFLOW_STATUSES,
+  badgeClass,
+  isDecision,
+} from '../lib/statuses'
 
 interface Submission {
   id: string
   title: string
   genre: string
   status: string
+  decided_at: string | null
   hanover_student: boolean
   manuscript_path: string
 }
@@ -32,6 +37,8 @@ function EditorSubmissionPage() {
   const [submission, setSubmission] = useState<Submission | null>(null)
   const [author, setAuthor] = useState<Author | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [decidedAt, setDecidedAt] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [ratings, setRatings] = useState<RatingRow[]>([])
   const [missing, setMissing] = useState(false)
@@ -46,7 +53,9 @@ function EditorSubmissionPage() {
     const load = async () => {
       const { data: sub } = await supabase
         .from('submissions')
-        .select('id, title, genre, status, hanover_student, manuscript_path')
+        .select(
+          'id, title, genre, status, decided_at, hanover_student, manuscript_path',
+        )
         .eq('id', submissionId)
         .maybeSingle()
       if (cancelled) return
@@ -56,6 +65,7 @@ function EditorSubmissionPage() {
       }
       setSubmission(sub)
       setStatus(sub.status)
+      setDecidedAt(sub.decided_at ?? null)
 
       const { data: auth } = await supabase
         .from('authors')
@@ -84,15 +94,46 @@ function EditorSubmissionPage() {
     }
   }, [submissionId])
 
-  const updateStatus = async (next: string) => {
+  // One writer for both halves of the workflow. `decided_at` and `status` must
+  // move together: the database refuses a decision without a timestamp, and a
+  // timestamp on a workflow state, so a partial update is rejected rather than
+  // silently leaving an inconsistent row.
+  const save = async (next: string, decision: boolean) => {
     if (!submissionId) return
-    const previous = status
+    const previousStatus = status
+    const previousDecidedAt = decidedAt
+    const stamp = decision ? new Date().toISOString() : null
+
+    setStatusError(null)
     setStatus(next)
+    setDecidedAt(stamp)
+
     const { error } = await supabase
       .from('submissions')
-      .update({ status: next })
+      .update({ status: next, decided_at: stamp })
       .eq('id', submissionId)
-    if (error) setStatus(previous)
+
+    if (error) {
+      setStatus(previousStatus)
+      setDecidedAt(previousDecidedAt)
+      setStatusError(error.message)
+    }
+  }
+
+  const decide = (next: string) => {
+    if (!submission) return
+    const ok = window.confirm(
+      `Record “${next}” for “${submission.title}”?\n\n` +
+        'The decision is stamped with today’s date. You can undo it from this page.',
+    )
+    if (ok) void save(next, true)
+  }
+
+  const undoDecision = () => {
+    const ok = window.confirm(
+      'Send this back to Shortlist and clear the decision?',
+    )
+    if (ok) void save('Shortlist', false)
   }
 
   if (missing) {
@@ -144,22 +185,56 @@ function EditorSubmissionPage() {
 
       <div className="status-box">
         <h2>Status</h2>
-        <select
-          className="status-select"
-          value={status ?? ''}
-          onChange={(e) => updateStatus(e.target.value)}
-        >
-          {statuses.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        {status && (
-          <span className={`badge badge-${status.toLowerCase().replace(' ', '-')}`}>
-            {status}
-          </span>
+        {status && isDecision(status) ? (
+          <div className="decision-record">
+            <span className={badgeClass(status)}>{status}</span>
+            {decidedAt && (
+              <span className="hint">
+                {' '}
+                decided {new Date(decidedAt).toLocaleDateString()}
+              </span>
+            )}
+            <button type="button" className="btn btn-quiet" onClick={undoDecision}>
+              Undo decision
+            </button>
+          </div>
+        ) : (
+          <div>
+            <select
+              className="status-select"
+              value={status ?? ''}
+              onChange={(e) => void save(e.target.value, false)}
+            >
+              {WORKFLOW_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.value}
+                </option>
+              ))}
+            </select>
+            {status && <span className={badgeClass(status)}>{status}</span>}
+          </div>
         )}
+
+        <h3>Decision</h3>
+        <p className="hint">
+          Stamps today’s date on the record. A decision is final until you undo
+          it — the workflow dropdown is for moving work around, this is for
+          settling it.
+        </p>
+        <div className="decision-buttons">
+          {DECISION_STATUSES.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              className={`btn decision-${s.tone}`}
+              onClick={() => decide(s.value)}
+              disabled={status === s.value}
+            >
+              {s.value}
+            </button>
+          ))}
+        </div>
+        {statusError && <p className="error">{statusError}</p>}
       </div>
 
       <div className="ratings-box">
