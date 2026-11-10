@@ -22,6 +22,12 @@ async function signIn(
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill(password)
   await page.locator('form button[type="submit"]').click()
+
+  // click() resolves the moment the event is dispatched, not when the
+  // sign-in round-trip finishes — so a caller that navigates next can reload
+  // the app before the session is persisted, and RequireAuth then bounces
+  // (correctly) to /login. Wait for the post-login redirect instead.
+  await expect(page).not.toHaveURL(/\/login$/)
 }
 
 test.describe('authenticated roles', () => {

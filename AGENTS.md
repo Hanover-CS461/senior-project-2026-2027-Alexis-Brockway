@@ -46,15 +46,15 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — Vitest + Playwright green. `app/.env.test` now exists (gitignored) with
-  two throwaway accounts, so the authenticated suites run locally: the API suite is
-  **14/15** — the last test needs the test-Chief promoted to `chief_editor` (see §13
-  week 4). **CI still runs the anonymous half only**, because no
-  test credentials are committed; a fresh clone gets 6 clean skips by design.
+- **Tests** — **green across the board (Nov 10)**: `npm test` **15/15** and
+  `npm run test:e2e` **8/8**, with no skips. `app/.env.test` (gitignored) holds two
+  throwaway accounts, and the test-Chief is now `chief_editor`, which is what unblocked
+  the last assertion. **CI still runs the anonymous half only**, because no test
+  credentials are committed; a fresh clone gets 6 clean skips by design.
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
-- **Open work** — issues #1–#4 (§8), of which #2 and #4 are nearly closed. The
-  remaining substantive gaps are metadata stripping (#3) and export. §13 has the plan.
+- **Open work** — issues #1–#4 (§8); #2 and #4 are **closed**. The remaining
+  substantive gaps are metadata stripping (#3) and export. §13 has the plan.
 
 ---
 
@@ -328,6 +328,12 @@ publishes demo accounts.
   empty string, so a template-following `.env.test` with `TEST_SUPABASE_URL=` silently
   skipped the whole authenticated suite. `rls-auth.test.ts` now trims and treats `''`
   as unset (fixed Nov 5).
+- **Playwright `click()` does not wait for sign-in.** `authenticated.spec.ts`'s helper
+  used to click submit and return, so a test that navigated immediately reloaded the app
+  before the session was persisted and `RequireAuth` bounced it to `/login` — a race that
+  looked exactly like a broken auth guard. The helper now waits for the post-login
+  redirect (`expect(page).not.toHaveURL(/\/login$/)`). Any future spec that signs in
+  must do the same, or await a heading.
 - **Stray objects in the live bucket:** `manuscripts/probe.txt` (Oct 20, buckets-probe)
   and `manuscripts/samples/probe-test.txt` (Oct 29, upload-path probe). Anon can
   upload by policy but cannot delete (403), so they need the dashboard,
@@ -349,19 +355,19 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
    deactivate/reactivate, RLS gating, and the audit trail all work against real rows
    (the init migration was applied Oct 29 — see §7). *Remaining:* invite links /
    "join with a code" flow instead of open self-signup (scheduled for §13 week 5).
-2. **#2 — Automated testing.** Effectively done: Vitest unit + live anon-RLS +
-   Playwright UI E2E are green, and the authenticated layer now activates locally
-   (see #4). Remaining: the single failing assertion, and the optional pgTAP run.
+2. **#2 — Automated testing.** *Closed Nov 10:* Vitest **15/15**, live anon-RLS, and
+   Playwright **8/8** including the three authenticated browser tests. Remaining
+   optional work: the pgTAP run (needs Docker).
 3. **#3 — Strip metadata from uploaded manuscripts at intake** (exifr / pdf-lib /
    `.docx`), server-side. Scheduled for §13 week 5; the open fork is *where* it
    runs (Edge Function vs. browser).
-4. **#4 — Activate the authenticated RLS tests.** *Nearly closed:* `app/.env.test`
-   is filled in with two throwaway accounts and the suite now runs — **14/15**.
-   The two reader assertions prove the security story live (`is_editor()` false,
-   `SELECT authors` returns `[]`, exactly one visible `members` row). The last test
-   needs `kennings.chief@example.com` promoted to `chief_editor` — one dropdown in
-   the Staff tab, or one SQL `update`. A fresh clone (no `.env.test`) still gets 6
-   clean skips, and CI has no credentials by design.
+4. **#4 — Activate the authenticated RLS tests.** *Closed Nov 10.* `app/.env.test`
+   holds two throwaway accounts; the test-Chief was promoted to `chief_editor` and
+   everything passes. The suite proves the security story both ways: through the API
+   (`is_editor()` false, `SELECT authors` returns `[]`, exactly one visible `members`
+   row) and through the browser (a reader sees the queue but no author identity). A
+   fresh clone (no `.env.test`) still gets 6 clean skips, and CI has no credentials by
+   design.
 
 ### Other known gaps / next candidates
 - ~~Reader queue → Supabase~~ — **done** (§13 week 3): `ratings` table with RLS,
@@ -559,17 +565,23 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   Reader names are deliberately absent: only the Chief Editor can read `members`, so
   attributing notes needs a policy decision.
 
-### Week 4 — activate the tests, finish the editor workflow (mostly done Nov 5)
+### Week 4 — activate the tests, finish the editor workflow ✅ (Nov 10)
 - ~~Point `.env.test` at the seeded accounts → the authenticated RLS tests and the
   Playwright role suite stop skipping~~ — **done Nov 5.** Created
   `kennings.reader@example.com` and `kennings.chief@example.com` through the sign-up API
   (confirmation is off, so no email round-trip), gave each a `reader` membership row, and
   wrote `app/.env.test`. Vitest: **14 passed / 1 failed / 0 skipped**.
-- **Still open:** promote `kennings.chief@example.com` to `chief_editor` — Staff tab
-  dropdown, or `update public.members set role = 'chief_editor' where email =
-  'kennings.chief@example.com';`. That is the one failing assertion (`is_editor()` is
-  false for a reader). It can't be done through the API: the bootstrap policy only
-  allows `chief_editor` when `member_count() = 0`, and it is 4.
+- ~~Promote `kennings.chief@example.com` to `chief_editor`~~ — **done Nov 10** via the
+  Staff tab dropdown (which also exercised the role change + audit trigger). It can't be
+  done through the API: the update policy requires `is_chief_editor()`, and the insert
+  policy only allows `chief_editor` when `member_count() = 0`.
+- **Result:** `npm test` **15/15**, `npm run test:e2e` **8/8**, zero skips. One real bug
+  fell out of the first honest browser run — the sign-in helper raced the session write
+  (see §7) — and it was a test bug, not an auth bug.
+- **Found, not fixed:** a Reader who signs in is sent to `/editor`, where they hit
+  *"You need an editor role to view this page."* Correct, but a dead end. Sending
+  non-editors to `/reader` after login (or linking to the queue from that message) is a
+  five-line improvement. Same path affects a signed-in reader who visits `/login`.
 - **Found and fixed:** `TEST_SUPABASE_URL=` (blank, as the template instructs) silently
   skipped the whole suite because `??` keeps `''`. `rls-auth.test.ts` now trims and
   treats empty as unset.
