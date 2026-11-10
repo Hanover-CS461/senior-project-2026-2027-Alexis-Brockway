@@ -2,7 +2,7 @@
 
 *Read this first.* This is the onboarding/handoff file for any AI agent (or
 human) working in this repo. It replaces the old `project-context.md`. Last
-updated **Nov 5, 2026**.
+updated **Nov 10, 2026**.
 
 ---
 
@@ -22,7 +22,7 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Nov 5, 2026)
+## 2. Current status (Nov 10, 2026)
 
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
@@ -46,11 +46,17 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 10)**: `npm test` **15/15** and
+- **Tests** — **green across the board (Nov 10)**: `npm test` **24/24** and
   `npm run test:e2e` **8/8**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is now `chief_editor`, which is what unblocked
-  the last assertion. **CI still runs the anonymous half only**, because no test
-  credentials are committed; a fresh clone gets 6 clean skips by design.
+  the last assertion. **CI still runs the anonymous half only**, because no
+  test credentials are committed; a fresh clone gets 6 clean skips by design.
+- **Decision workflow** — built Nov 10. Six statuses in five stages:
+  `Received → In review → Shortlist → { Accepted | Hold | Rejected }`. The workflow
+  dropdown is separate from the decision buttons on purpose; a decision is stamped with
+  `decided_at`, confirmed, and undone explicitly. **The migration has not been pasted
+  yet**, so the commit is local and unpushed — the detail page now selects `decided_at`
+  and would 400 on the live column's absence. See §7 ("deployment sequencing").
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
 - **Open work** — issues #1–#4 (§8); #2 and #4 are **closed**. The remaining
@@ -99,6 +105,19 @@ All app commands run from `app/`:
   `.env` — Vite reads env only at startup.
 - **The anon key is the newer `sb_publishable_…` format** (public by design).
   Never put the `service_role` key in the app.
+- **There is ONE Supabase project, and the tests use it.** `TEST_SUPABASE_URL` and
+  `TEST_SUPABASE_ANON_KEY` in `.env.test` are deliberately **blank**, so `rls-auth.test.ts`
+  falls back to `VITE_SUPABASE_URL` and `playwright.config.ts` sees a falsy
+  `testProjectUrl` and reuses the app's dev server. Same Postgres, same Auth, same
+  private bucket as the deployed site. Consequences worth remembering:
+  - the two test accounts are **real `members` rows** (that is why `member_count()`
+    is 4), and the test-Chief is a real `chief_editor` who can read `authors`;
+  - **the suites must stay read-only.** All 8 e2e specs and the 3 auth tests only
+    navigate and GET — verified Nov 10. There is **no DELETE policy** on
+    `submissions`, so a test that wrote a row could never clean it up from the app.
+  - to isolate later, fill in `TEST_SUPABASE_URL`/`TEST_SUPABASE_ANON_KEY` and the
+    config switches projects and boots its own server. The free tier allows 2
+    projects. Not done: a second project is more maintenance than it is worth here.
 - **Authenticated tests** read `app/.env.test` (gitignored; template is
   `app/.env.test.example`). Without it those suites skip cleanly. As of Nov 5 the file
   **exists locally** with two throwaway accounts (`kennings.reader@example.com` and
@@ -153,8 +172,8 @@ All app commands run from `app/`:
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed) |
-| `app/src/lib/` | Current | `supabase.ts` (client), `auth.tsx` (AuthProvider/`useAuth`), `roles.ts` (pure role helpers), `membership.ts` (`joinClub` + `MembershipClient` seam) |
-| `app/src/lib/*.test.ts` | Current | `roles`, `membership` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
+| `app/src/lib/` | Current | `supabase.ts` (client), `auth.tsx` (AuthProvider/`useAuth`), `roles.ts` (pure role helpers), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam) |
+| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
 | `app/supabase/config.toml` | Current | Supabase project settings as code (project ref, auth, storage, ports) |
@@ -202,8 +221,13 @@ The security story **is** the project. RLS + a separate `authors` table means a
 Reader cannot read identity even by calling the database directly.
 
 **Tables** (`app/supabase/migrations/`):
-- `submissions` — `id, title, genre, status, hanover_student, manuscript_path,
-  created_at`. **No author identity here** (readers may read this).
+- `submissions` — `id, title, genre, status, decided_at, hanover_student,
+  manuscript_path, created_at`. **No author identity here** (readers may read this).
+  Two check constraints make the workflow structural (`20261110000000`):
+  `submissions_status_check` limits `status` to the six ladder values, and
+  `submissions_decided_at_matches_status` requires a decision and its timestamp to
+  travel together — so `set status = 'Accepted'` without `decided_at` is **rejected
+  by Postgres**, not merely hidden by the UI.
 - `authors` — `id, submission_id (unique FK), name, email, mailing_address, bio,
   created_at`. Readers have **no** policy → blind.
 - `members` — `id, user_id (FK auth.users, unique), email, name, role, active,
@@ -254,7 +278,7 @@ insert-with-return is fine.)
 migration and the `ratings` migration are applied: all five tables (`submissions`,
 `authors`, `members`, `member_audit`, `ratings`) and all four helpers (`member_count()`,
 `is_editor()`, `is_active_member()`, `is_chief_editor()`) respond, the Member Manager and
-the reader queue work against real rows, and `npm test` runs **14/15** with no skips when
+the reader queue work against real rows, and `npm test` runs **24/24** with no skips when
 `.env.test` is present.
 
 It was applied by **pasting `app/supabase/migrations/20261013000000_init.sql` into the
@@ -334,6 +358,25 @@ publishes demo accounts.
   looked exactly like a broken auth guard. The helper now waits for the post-login
   redirect (`expect(page).not.toHaveURL(/\/login$/)`). Any future spec that signs in
   must do the same, or await a heading.
+- **Deployment sequencing: paste the migration before pushing code that reads a new
+  column.** PostgREST returns `42703 column … does not exist` for a `select` of a
+  column the table doesn't have yet, which blanks the page. Because the CLI has never
+  been linked, the migration is a manual paste by the user, so the safe order is:
+  write the migration → commit → *user pastes* → push. The decision workflow
+  (`decided_at`) is currently in exactly that state.
+- **`status` and `decided_at` must be written together.** The
+  `submissions_decided_at_matches_status` constraint rejects a decision with no
+  timestamp *and* a timestamp on a workflow status. Any code (or hand-run SQL) that
+  updates only `status` to `Accepted`/`Hold`/`Rejected` now fails with a check
+  violation — intended, and it surfaces bugs loudly instead of storing an inconsistent
+  row.
+- **A `<select>` is not a safe control for an irreversible action.** The status
+  dropdown saves on `change`, so a mouse-wheel scroll over a focused select changes it.
+  That is why decisions are buttons behind a `window.confirm`, not three more options.
+- **Readers must not see the outcome.** `readerStatus()` in `statuses.ts` renders the
+  three decision states as **"With editors"** on both the queue and the reader detail
+  page; `statuses.test.ts` asserts the word itself never reaches them. Reversing that is
+  one constant, but it is a workflow decision about Kennings, not a technical one.
 - **Stray objects in the live bucket:** `manuscripts/probe.txt` (Oct 20, buckets-probe)
   and `manuscripts/samples/probe-test.txt` (Oct 29, upload-path probe). Anon can
   upload by policy but cannot delete (403), so they need the dashboard,
@@ -355,7 +398,7 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
    deactivate/reactivate, RLS gating, and the audit trail all work against real rows
    (the init migration was applied Oct 29 — see §7). *Remaining:* invite links /
    "join with a code" flow instead of open self-signup (scheduled for §13 week 5).
-2. **#2 — Automated testing.** *Closed Nov 10:* Vitest **15/15**, live anon-RLS, and
+2. **#2 — Automated testing.** *Closed Nov 10:* Vitest **24/24**, live anon-RLS, and
    Playwright **8/8** including the three authenticated browser tests. Remaining
    optional work: the pgTAP run (needs Docker).
 3. **#3 — Strip metadata from uploaded manuscripts at intake** (exifr / pdf-lib /
@@ -370,6 +413,9 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
    design.
 
 ### Other known gaps / next candidates
+- ~~Decision workflow~~ — **done Nov 10**: six statuses in five stages, `decided_at`,
+  a confirm-gated decision panel, an undo, and two check constraints. The *notification*
+  half (decision letters via Resend) is still absent.
 - ~~Reader queue → Supabase~~ — **done** (§13 week 3): `ratings` table with RLS,
   `/reader` login-gated, real queue + detail page.
 - Editor dashboard remainder: reader assignments, internal discussion, decision
@@ -400,6 +446,19 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 10. Auth = in-app self sign-up; first member becomes Chief Editor via an RLS
     policy (no app-side promotion).
 11. Insert-without-read-back gotcha → client-generated UUIDs (§6).
+12. **One database for the app and the tests** — no second Supabase project. The
+    blind-review tests prove the *deployed* policies, which is a stronger claim than
+    proving a replica's. The cost is that the suites must stay read-only (§3).
+13. **Decisions are an act, not a label.** `Accepted`/`Hold`/`Rejected` carry
+    `decided_at`, need a confirm, and are undone explicitly; the workflow dropdown only
+    holds the three in-progress states. Enforced by check constraint, not just by the UI.
+14. **Readers do not see the outcome.** All three decision states read "With editors" to
+    a reader — the author learns from a decision letter, not from a queue badge.
+15. **No secret key in the app.** Seeding demo users goes through the sign-up API and
+    export goes through the Chief Editor's own session, both of which need only the
+    publishable key, so the app's boundary is only ever the RLS boundary. If an Edge
+    Function ever needs elevated writes, it gets one named, non-`VITE_` secret used via
+    `@supabase/server`'s `withSupabase({ auth: 'secret' })`.
 
 ---
 
@@ -424,6 +483,11 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 - **They ask sharp security questions** ("how do you use the key without putting it in
   the public repo?"). Answer with the concrete evidence — grep the tree and git history,
   show the check's output — rather than reassurance. §7 has the key model.
+- **They ask for the handoff file to be updated at the end of a work session**
+  ("add everything to the agents file"). Treat `AGENTS.md` as a deliverable, not
+  scratch notes: when a unit of work lands, update status, gotchas, decisions, and the
+  plan in the same breath — including anything still pending, so the next agent does not
+  repeat the investigation.
 - If the browser "isn't showing" edits, restart by port (§3) and confirm via
   curl before saying it's live.
 
@@ -575,7 +639,8 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   Staff tab dropdown (which also exercised the role change + audit trigger). It can't be
   done through the API: the update policy requires `is_chief_editor()`, and the insert
   policy only allows `chief_editor` when `member_count() = 0`.
-- **Result:** `npm test` **15/15**, `npm run test:e2e` **8/8**, zero skips. One real bug
+- **Result:** `npm test` **15/15** at that point (24/24 once the decision workflow and its
+  9 unit tests landed), `npm run test:e2e` **8/8**, zero skips. One real bug
   fell out of the first honest browser run — the sign-in helper raced the session write
   (see §7) — and it was a test bug, not an auth bug.
 - **Found, not fixed:** a Reader who signs in is sent to `/editor`, where they hit
@@ -585,8 +650,12 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
 - **Found and fixed:** `TEST_SUPABASE_URL=` (blank, as the template instructs) silently
   skipped the whole suite because `??` keeps `''`. `rls-auth.test.ts` now trims and
   treats empty as unset.
-- Editor dashboard: real statuses (Accepted / Rejected / Hold, not just 3), and the
-  ratings summary backed by real data — the ratings summary is done.
+- ~~Editor dashboard: real statuses~~ — **done Nov 10**: six statuses in five stages,
+  `decided_at`, decision buttons with a confirm, undo, and the filter tabs derived from
+  the shared list. See §7 for the two check constraints and the deployment sequencing.
+  **Pending:** the migration still has to be pasted before the commit is pushed. Once it
+  is, verify by hand: Accept one seeded submission, confirm the "decided …" date appears,
+  then Undo.
 
 ### Week 5 — metadata stripping, docs, buffer
 - Strip manuscript metadata at intake (issue #3). See the open fork below.
