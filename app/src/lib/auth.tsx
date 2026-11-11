@@ -8,6 +8,14 @@ interface AuthState {
   session: Session | null
   loading: boolean
   member: MemberRow | null
+  /**
+   * True when the page was opened from a password-reset email. supabase-js
+   * trades the #access_token fragment for a session and then fires
+   * PASSWORD_RECOVERY; the router uses this to send the person to the reset
+   * form instead of the home page. Cleared once the new password is saved.
+   */
+  recovery: boolean
+  acknowledgeRecovery: () => void
   signOut: () => Promise<void>
 }
 
@@ -36,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [member, setMember] = useState<MemberRow | null>(null)
+  const [recovery, setRecovery] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -43,9 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession)
       setLoading(false)
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
     })
 
     return () => sub.subscription.unsubscribe()
@@ -77,8 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const acknowledgeRecovery = () => setRecovery(false)
+
   return (
-    <AuthContext.Provider value={{ session, loading, member, signOut }}>
+    <AuthContext.Provider
+      value={{ session, loading, member, recovery, acknowledgeRecovery, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   )

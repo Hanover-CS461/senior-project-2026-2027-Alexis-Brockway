@@ -1,9 +1,11 @@
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import GenrePage from './pages/GenrePage'
 import GenreRulesPage from './pages/GenreRulesPage'
 import SubmitPage from './pages/SubmitPage'
 import LoginPage from './pages/LoginPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReaderQueuePage from './pages/ReaderQueuePage'
 import ReaderSubmissionPage from './pages/ReaderSubmissionPage'
 import EditorDashboardPage from './pages/EditorDashboardPage'
@@ -12,7 +14,8 @@ import { RequireAuth } from './components/RequireAuth'
 import { useAuth } from './lib/auth'
 
 function App() {
-  const { session, member, signOut } = useAuth()
+  const { session, member, recovery, signOut } = useAuth()
+  const location = useLocation()
 
   return (
     <div className="app-shell">
@@ -35,12 +38,19 @@ function App() {
       </nav>
 
       <main className="content">
+        {/* A password-reset email lands on the app root (see ForgotPasswordPage),
+            so bounce the person to the form once the recovery session exists. */}
+        {recovery && location.pathname !== '/reset-password' && (
+          <Navigate to="/reset-password" replace />
+        )}
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/submit/genre" element={<GenrePage />} />
           <Route path="/submit/genre/:genreSlug" element={<GenreRulesPage />} />
           <Route path="/submit" element={<SubmitPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/reader"
             element={

@@ -120,6 +120,11 @@ function LoginPage() {
               : 'Sign in'}
         </button>
       </form>
+      {mode === 'signin' && (
+        <p className="back-link">
+          <Link to="/forgot-password">Forgot your password?</Link>
+        </p>
+      )}
       <p className="back-link">
         <Link to="/">← Back to home</Link>
       </p>
