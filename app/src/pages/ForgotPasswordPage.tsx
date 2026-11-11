@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { emailLinkTarget } from '../lib/appUrl'
 
 /**
  * Step 1 of password recovery.
@@ -13,16 +14,10 @@ import { supabase } from '../lib/supabase'
  * fallback. A root landing keeps the #access_token fragment intact, the client
  * picks it up and emits PASSWORD_RECOVERY, and the router then shows the reset
  * form. See docs/404.html and main.tsx.
+ *
+ * The address itself comes from appUrl.ts, not from the address bar, so a
+ * request made on a local dev copy still produces a link that opens anywhere.
  */
-function redirectTarget() {
-  return `${window.location.origin}${import.meta.env.BASE_URL}`
-}
-
-/** True when the person is running the app from `npm run dev` on this machine. */
-function isLocal() {
-  return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
-}
-
 function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
@@ -35,7 +30,7 @@ function ForgotPasswordPage() {
     setBusy(true)
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: redirectTarget(),
+      redirectTo: emailLinkTarget(),
     })
 
     setBusy(false)
@@ -72,17 +67,13 @@ function ForgotPasswordPage() {
             — the club's mail comes from Supabase's shared sender.
           </p>
           <p className="hint">
-            The link brings you back to <code>{redirectTarget()}</code> — the
-            address you were on when you asked, not necessarily the main site.
+            The link brings you back to <code>{emailLinkTarget()}</code>. Open it
+            in any browser, on any device — it is not tied to this one.
           </p>
-          {isLocal() && (
-            <p className="hint">
-              <strong>You're on your local copy.</strong> That link only opens
-              while <code>npm run dev</code> is running on this machine, and a
-              browser hiccup looks exactly like a dead link. For a link that
-              works anywhere, request it from the live site instead.
-            </p>
-          )}
+          <p className="hint">
+            Older reset emails in your inbox point somewhere else; they are used
+            up and cannot be revived. Only the newest one works.
+          </p>
           <p className="hint">
             Still nothing after a few minutes? Ask the Chief Editor to send a
             reset from the Supabase dashboard (Authentication → Users → the
@@ -102,8 +93,8 @@ function ForgotPasswordPage() {
           </label>
           {error && <p className="error">{error}</p>}
           <p className="hint">
-            The link will bring you back to <code>{redirectTarget()}</code>.
-            {isLocal() && ' That is this machine only — it works while npm run dev is running.'}
+            The link will bring you back to <code>{emailLinkTarget()}</code>.
+            {' '}Links are single-use and last an hour.
           </p>
           <button type="submit" className="btn" disabled={busy}>
             {busy ? 'Sending…' : 'Send reset link'}
