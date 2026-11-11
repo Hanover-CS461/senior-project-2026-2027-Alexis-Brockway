@@ -22,7 +22,7 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Nov 10, 2026)
+## 2. Current status (Nov 11, 2026)
 
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
@@ -36,6 +36,12 @@ Submissions page on Sep 23, 2026 and live in the app.
   **Email confirmation is now OFF** (`mailer_autoconfirm: true` live, and
   `config.toml` already had `enable_confirmations = false`), so sign-up returns a
   live session immediately. See §7.
+- **Password recovery** — built Nov 11 (`/forgot-password` → email → `/reset-password`).
+  The emailed link deliberately points at the **app root**, not the reset route — see
+  §7. A reset URL with no session says the link expired; the same page also works as a
+  change-password form when signed in. **The email leg has never been tested end to end**,
+  because the only accounts are `@example.com` (no inbox) and the free tier's built-in
+  mailer is rate-limited and spam-prone. Needs a real address to prove.
 - **Editor dashboard** — Queue reads real data; `/editor/:id` reads real
   submission + author and saves status. **Member Manager is live**: role changes,
   soft deactivate/reactivate, and the audit trail all work against real rows.
@@ -46,17 +52,17 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 10)**: `npm test` **24/24** and
-  `npm run test:e2e` **8/8**, with no skips. `app/.env.test` (gitignored) holds two
-  throwaway accounts, and the test-Chief is now `chief_editor`, which is what unblocked
+- **Tests** — **green across the board (Nov 11)**: `npm test` **24/24** and
+  `npm run test:e2e` **11/11**, with no skips. `app/.env.test` (gitignored) holds two
+  throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
   test credentials are committed; a fresh clone gets 6 clean skips by design.
-- **Decision workflow** — built Nov 10. Six statuses in five stages:
+- **Decision workflow** — built Nov 10, **live Nov 10**. Six statuses in five stages:
   `Received → In review → Shortlist → { Accepted | Hold | Rejected }`. The workflow
   dropdown is separate from the decision buttons on purpose; a decision is stamped with
-  `decided_at`, confirmed, and undone explicitly. **The migration has not been pasted
-  yet**, so the commit is local and unpushed — the detail page now selects `decided_at`
-  and would 400 on the live column's absence. See §7 ("deployment sequencing").
+  `decided_at`, confirmed, and undone explicitly. The `decided_at` column is pasted and
+  the feature is pushed (`74bb1f1`); the two **check constraints are still unpasted**, so
+  the ladder is enforced only by the app today. See §7 ("deployment sequencing").
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
 - **Open work** — issues #1–#4 (§8); #2 and #4 are **closed**. The remaining
@@ -170,7 +176,7 @@ All app commands run from `app/`:
 | `.github/workflows/jekyll-gh-pages.yml` | Live | Builds Jekyll + Marp, deploys to Pages |
 | `tutorial-study-guide.md` | Gitignored | Private class cheat sheet — never stage/push |
 | **`app/`** | **The app** | React + Vite + TS submission manager |
-| `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
+| `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed) |
 | `app/src/lib/` | Current | `supabase.ts` (client), `auth.tsx` (AuthProvider/`useAuth`), `roles.ts` (pure role helpers), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam) |
 | `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
@@ -370,6 +376,23 @@ publishes demo accounts.
   updates only `status` to `Accepted`/`Hold`/`Rejected` now fails with a check
   violation — intended, and it surfaces bugs loudly instead of storing an inconsistent
   row.
+- **A password-reset link must land on the app root, never on `/reset-password`.**
+  On Pages a deep link is answered by `404.html`, which stashes the path and bounces to
+  `/app/`, and `main.tsx` restores it with `history.replaceState`. But the Supabase client
+  is constructed at module import — *before* that restore runs — so it reads the URL while
+  the page is still on the fallback, sees no `#access_token`, and quietly drops the
+  recovery token. `redirectTo` is therefore `${origin}${BASE_URL}` (the root, which always
+  returns 200 and keeps the fragment), the client fires `PASSWORD_RECOVERY`, and
+  `AuthProvider` exposes a `recovery` flag that the router uses to forward to the form.
+  Falling back to `site_url` if the allow-list rejects the URL is harmless: it is that
+  same root.
+- **Supabase's built-in auth email is a demo, not a mail service.** The free tier's
+  shared sender is heavily rate-limited (a handful per hour — a 429 comes back as "too
+  many reset emails") and routinely lands in spam. It is enough to prove the flow, not
+  enough for a real reading period; production auth mail belongs on Resend like the
+  decision letters (§13). It also means the recovery flow **cannot be tested with the
+  `@example.com` demo accounts** — no inbox exists. Create an account with a real address
+  to prove it, and reset that account's password.
 - **A `<select>` is not a safe control for an irreversible action.** The status
   dropdown saves on `change`, so a mouse-wheel scroll over a focused select changes it.
   That is why decisions are buttons behind a `window.confirm`, not three more options.
@@ -418,10 +441,17 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   half (decision letters via Resend) is still absent.
 - ~~Reader queue → Supabase~~ — **done** (§13 week 3): `ratings` table with RLS,
   `/reader` login-gated, real queue + detail page.
+- ~~Password recovery~~ — **done Nov 11**: `/forgot-password` + `/reset-password`, an
+  expired-link state, and a change-password mode. **Gap:** auth email rides Supabase's
+  demo mailer (rate-limited, spam-prone) and the `@example.com` accounts cannot receive
+  it, so the inbox half is unproven — prove it with a real address, then move auth mail
+  to Resend (§7).
 - Editor dashboard remainder: reader assignments, internal discussion, decision
   letters, bulk actions.
-- Decision letters + email via Resend (only 3 statuses exist today: Received /
-  In review / Shortlist).
+- **A Reader who signs in lands on `/editor`** and reads "You need an editor role to view
+  this page" — technically correct, practically a dead end. `/reader` is the fix.
+- Decision letters + email via Resend (submissions now carry all six statuses; only
+  the letters are missing).
 - ~~Production deploy (Netlify/Vercel)~~ → hosting decided: **GitHub Pages under
   the existing site** (§5, §13 week 2). Post-deadline question is a **custom
   domain**, not a new host — see the end of §13.
@@ -657,13 +687,25 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   is, verify by hand: Accept one seeded submission, confirm the "decided …" date appears,
   then Undo.
 
+### Week 4.5 — lock-in details ✅ (Nov 11)
+- ~~Password recovery~~ — **done**, and live. `/forgot-password` → email → `/reset-password`,
+  with an expired-link state and a change-password mode for signed-in members. Covered by
+  3 read-only e2e specs; the email leg is still unproven for lack of an inbox (§7).
+- ~~Paste the decision migration~~ — **half done**: the `decided_at` column is live and the
+  feature is pushed, which unblocked `/editor/:id`. The two check constraints are still
+  unpasted, so the six-status ladder is app-enforced only.
+- **Still open from week 4:** a Reader who signs in lands on `/editor` and gets "You need an
+  editor role to view this page" — a dead end on the very first click. Send non-editors to
+  `/reader` instead (five lines, in `LoginPage`'s redirect and `RequireAuth`'s message).
+
 ### Week 5 — metadata stripping, docs, buffer
 - Strip manuscript metadata at intake (issue #3). See the open fork below.
 - `npm run db:export` — the proposal promises every record is exportable; this is a
   grading line item.
 - Final docs pass.
 
-**After the 5 weeks:** decision letters + Resend, join-with-a-code, real club pilot.
+**After the 5 weeks:** decision letters + Resend (and move **auth email** onto Resend
+too — the built-in mailer is a demo, §7), join-with-a-code, real club pilot.
 
 ### After Nov 24 — making the URL the club's
 
