@@ -381,11 +381,29 @@ publishes demo accounts.
   `/app/`, and `main.tsx` restores it with `history.replaceState`. But the Supabase client
   is constructed at module import — *before* that restore runs — so it reads the URL while
   the page is still on the fallback, sees no `#access_token`, and quietly drops the
-  recovery token. `redirectTo` is therefore `${origin}${BASE_URL}` (the root, which always
-  returns 200 and keeps the fragment), the client fires `PASSWORD_RECOVERY`, and
-  `AuthProvider` exposes a `recovery` flag that the router uses to forward to the form.
-  Falling back to `site_url` if the allow-list rejects the URL is harmless: it is that
-  same root.
+  recovery token. `redirectTo` is therefore the app root from `lib/appUrl.ts` (always the
+  **deployed** URL, never `window.location.origin`, so a request made on a dev copy does
+  not produce a localhost link), the client fires `PASSWORD_RECOVERY`, and `AuthProvider`
+  exposes a `recovery` flag that the router uses to forward to the form.
+- **A rejected `redirect_to` is NOT harmless — it falls back to the project's `site_url`,
+  which is still `http://localhost:3000`.** `lib/appUrl.ts` is only half the fix; the
+  other half is the dashboard (§7 note under "auth email"). Prove the current state in one
+  request — an invalid token makes GoTrue redirect without sending mail:
+  ```bash
+  curl -s -o /dev/null -D - "$URL/auth/v1/verify?token=nope&type=recovery&redirect_to=$APP_ROOT" | grep -i location
+  ```
+  `location:` must start with the Pages URL. On Nov 11 it printed
+  `http://localhost:3000#error=…` — i.e. the allow-list was missing the app, and every
+  reset email in the project pointed at a machine that does not exist. The allow-list
+  *did* accept `localhost:5173` and `localhost:3000`, which is why a link requested from a
+  local dev copy looked fine while a link requested from the live site did not.
+- **A dead auth link must say so.** Supabase returns failures as
+  `#error=access_denied&error_description=…`, which creates no session and fires no event;
+  supabase-js ignores it and the visitor lands on the home page with no explanation (that
+  is what "the link does nothing" looked like on Nov 11). `lib/supabase.ts` captures the
+  fragment at import, before the client rewrites it, and the router forwards it to
+  `/reset-password`, which explains it. Any future auth link (magic link, invite) should
+  go through the same path.
 - **Supabase's built-in auth email is a demo, not a mail service.** The free tier's
   shared sender is heavily rate-limited (a handful per hour — a 429 comes back as "too
   many reset emails") and routinely lands in spam. It is enough to prove the flow, not
@@ -636,9 +654,13 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   API, reading `SUPABASE_SERVICE_ROLE_KEY` from the environment (never committed).
 - ~~`supabase config push` to turn off email confirmation~~ — **moot**: confirmation was
   turned off in the dashboard (`mailer_autoconfirm: true`) and `config.toml` already had
-  `enable_confirmations = false`, so file and live agree. `site_url` and
-  `additional_redirect_urls` were also fixed to the Pages URL (+ `localhost:5173`), so a
-  later `config push` is now safe rather than breaking.
+  `enable_confirmations = false`, so file and live agree.
+  ⚠️ **CORRECTED Nov 11: `site_url` and `additional_redirect_urls` were NOT fixed.** The
+  live project still has Supabase's factory default Site URL `http://localhost:3000`, and
+  its allow-list holds `localhost:3000` + `localhost:5173` but **not** the Pages URL
+  (probed — see §7). `config.toml` is right; the dashboard was never updated, because
+  `config push` needs a linked CLI that has never existed. The fix is two dashboard
+  fields, and until they are set **every auth email (password reset) links to localhost**.
 - ~~**Keep-alive cron**~~ — **done** (`.github/workflows/keep-alive.yml`, Oct 29). Pings
   `app/.env.production`'s REST endpoint every 3 days and fails loudly if the answer
   isn't 200, so a paused project shows up as a red run instead of a broken app. No
