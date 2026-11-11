@@ -12,6 +12,7 @@ import EditorDashboardPage from './pages/EditorDashboardPage'
 import EditorSubmissionPage from './pages/EditorSubmissionPage'
 import { RequireAuth } from './components/RequireAuth'
 import { useAuth } from './lib/auth'
+import { authLinkError } from './lib/supabase'
 
 function App() {
   const { session, member, recovery, signOut } = useAuth()
@@ -39,8 +40,10 @@ function App() {
 
       <main className="content">
         {/* A password-reset email lands on the app root (see ForgotPasswordPage),
-            so bounce the person to the form once the recovery session exists. */}
-        {recovery && location.pathname !== '/reset-password' && (
+            so bounce the person to the form once the recovery session exists —
+            and also when the link was rejected, so the failure gets explained
+            instead of dumping them on the home page. */}
+        {(recovery || authLinkError) && location.pathname !== '/reset-password' && (
           <Navigate to="/reset-password" replace />
         )}
         <Routes>

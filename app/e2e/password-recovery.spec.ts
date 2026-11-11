@@ -31,3 +31,22 @@ test('the reset form is reachable and goes back to sign in', async ({ page }) =>
   await page.getByRole('link', { name: '← Back to sign in' }).click()
   await expect(page).toHaveURL(/\/login$/)
 })
+
+test('a rejected recovery link says why, instead of landing on the home page', async ({
+  page,
+}) => {
+  // What Supabase sends back when a reset link is expired or already used. It
+  // used to render the home page with no explanation at all.
+  await page.goto(
+    '/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired',
+  )
+  await expect(
+    page.getByRole('heading', { name: /didn.t work/ }),
+  ).toBeVisible()
+  await expect(page.getByText(/expired, or it was already used/)).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Send a new reset link' }),
+  ).toBeVisible()
+  // The dead fragment is cleared so a reload does not repeat the message.
+  await expect(page).not.toHaveURL(/error=/)
+})

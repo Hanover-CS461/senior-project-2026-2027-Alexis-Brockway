@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { authLinkError, supabase } from '../lib/supabase'
+import { friendlyAuthLinkError } from '../lib/authLink'
 import { useAuth } from '../lib/auth'
 import { isEditorRole } from '../lib/roles'
 
@@ -24,6 +25,16 @@ function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+
+  // Drop the dead #error=… fragment so a reload doesn't repeat the message.
+  useEffect(() => {
+    if (!authLinkError) return
+    window.history.replaceState(
+      null,
+      '',
+      window.location.pathname + window.location.search,
+    )
+  }, [])
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -49,6 +60,23 @@ function ResetPasswordPage() {
 
     acknowledgeRecovery()
     setDone(true)
+  }
+
+  if (authLinkError) {
+    return (
+      <div className="page">
+        <h1>That link didn't work</h1>
+        <p className="lede">{friendlyAuthLinkError(authLinkError)}</p>
+        <p className="hint">
+          A reset link is used up the moment it is opened — even if the page that
+          loaded was the wrong one, or the browser never reached the server. Asking
+          again is the only fix.
+        </p>
+        <p className="back-link">
+          <Link to="/forgot-password">Send a new reset link</Link>
+        </p>
+      </div>
+    )
   }
 
   if (loading) {
