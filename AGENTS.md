@@ -39,10 +39,10 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Password recovery** — built Nov 11 (`/forgot-password` → email → `/reset-password`).
   The emailed link deliberately points at the **app root**, not the reset route — see
   §7. A reset URL with no session says the link expired; the same page also works as a
-  change-password form when signed in. **The flow is deployed but still cannot deliver:**
-  the project's dashboard Site URL is `http://localhost:3000`, so Supabase rewrites every
-  emailed link to a machine that does not exist (§7). One dashboard field fixes it; until
-  then use the SQL password reset recorded in §7.
+  change-password form when signed in. **Both halves of the auth-URL problem are fixed as
+  of Nov 12**: the Site URL and the redirect allow-list now point at the Pages app, proven
+  by the three-probe test in §8. What is still unproven is **delivery** — the built-in
+  mailer is a demo (§7). The SQL password reset is the emergency lever, not the plan.
 - **Editor dashboard** — Queue reads real data; `/editor/:id` reads real
   submission + author and saves status. **Member Manager is live**: role changes,
   soft deactivate/reactivate, and the audit trail all work against real rows.
@@ -68,17 +68,17 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Decision workflow** — built Nov 10, **live Nov 10**. Six statuses in five stages:
   `Received → In review → Shortlist → { Accepted | Hold | Rejected }`. The workflow
   dropdown is separate from the decision buttons on purpose; a decision is stamped with
-  `decided_at`, confirmed, and undone explicitly. The `decided_at` column is pasted and
-  the feature is pushed (`74bb1f1`); the two **check constraints are still unpasted**, so
-  the ladder is enforced only by the app today. See §7 ("deployment sequencing").
+  `decided_at`, confirmed, and undone explicitly. The `decided_at` column and both check
+  constraints (`submissions_status_check`, `submissions_decided_at_matches_status`) are
+  **live as of Nov 12**, so the ladder is structural: Postgres rejects `Accepted` without
+  a timestamp. See §7 ("deployment sequencing").
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
-- **Open work** — 🟠 **top of the list is the rest of the §8 blocker**: the Redirect
-  allow-list now holds the app (recovery mail delivers), but the **Site URL is still
-  `http://localhost:3000`**, so confirmation/invite/magic-link mail does not. One
-  dashboard field, not code. After that the substantive gap is **metadata stripping**
-  (#3); export landed Nov 12. Issues #1–#4 (§8); #2 and #4 are **closed**. §13 has the
-  plan.
+- **Open work** — the auth-URL blocker is **closed** (§8: all three probes now land on the
+  app), and the demo queue is clean. The substantive gap left before Nov 24 is **metadata
+  stripping** (#3), which is the one hole in blind review; decision letters, invite codes
+  and the club pilot are all after the deadline. Issues #1–#4 (§8); #2 and #4 are
+  **closed**. §13 has the plan.
 
 ---
 
@@ -416,10 +416,11 @@ publishes demo accounts.
   **deployed** URL, never `window.location.origin`, so a request made on a dev copy does
   not produce a localhost link), the client fires `PASSWORD_RECOVERY`, and `AuthProvider`
   exposes a `recovery` flag that the router uses to forward to the form.
-- **A rejected `redirect_to` is NOT harmless — it falls back to the project's `site_url`,
-  which is still `http://localhost:3000`.** `lib/appUrl.ts` is only half the fix; the
-  other half is the dashboard (§7 note under "auth email"). Prove the current state in one
-  request — an invalid token makes GoTrue redirect without sending mail:
+- **A rejected `redirect_to` is NOT harmless — it falls back to the project's `site_url`.**
+  `lib/appUrl.ts` is only half the fix; the other half is the dashboard, and the fallback
+  is exactly how the app spent two days sending every reset email to a machine that does
+  not exist. Prove the current state in one request — an invalid token makes GoTrue
+  redirect without sending mail:
   ```bash
   curl -s -o /dev/null -D - "$URL/auth/v1/verify?token=nope&type=recovery&redirect_to=$APP_ROOT" | grep -i location
   ```
@@ -428,12 +429,13 @@ publishes demo accounts.
   reset email in the project pointed at a machine that does not exist. The allow-list
   *did* accept `localhost:5173` and `localhost:3000`, which is why a link requested from a
   local dev copy looked fine while a link requested from the live site did not.
-  **Update Nov 12: half of this is now fixed.** The same probe with the app as
-  `redirect_to` returns the Pages URL, so the **Redirect allow-list now contains the
-  app** and recovery mail can deliver. The **Site URL is still `http://localhost:3000`**:
-  run the probe with no `redirect_to` (or with a foreign one) and `location:` still says
-  localhost. That leaves every auth mail the app doesn't build itself — confirmation,
-  invite, magic link — pointing at a dead machine. It is one dashboard field.
+  **Update Nov 12, evening: fixed, and verified.** All three probes now redirect into
+  the Pages app — including the one with **no `redirect_to`**, which is the Site URL
+  itself. So both dashboard fields are right and every auth email (reset, confirmation,
+  invite, magic link) points at the live app. This took three attempts across two days;
+  the lesson stands: **prove a dashboard save from the outside** with the probe below,
+  because the page has twice reported success while the project kept the old value.
+  What this does *not* prove is delivery — see "auth email is a demo" below.
 - **A dead auth link must say so.** Supabase returns failures as
   `#error=access_denied&error_description=…`, which creates no session and fires no event;
   supabase-js ignores it and the visitor lands on the home page with no explanation (that
@@ -476,16 +478,12 @@ publishes demo accounts.
   upload by policy but cannot delete (403), so they need the dashboard,
   `supabase storage rm`, or a service-role call. Inert — no author data — but should
   not be left in a project shown to a grader. **Still a §13 task.**
-- **Four junk submissions sit at the top of the reader queue** — `curl probe`,
-  `node probe`, `titleTitle`, `hello` (all Sep 24 probes, before the seed). They are
-  the first thing a demo visitor sees on `/reader`, above the six real samples. There is
-  **no DELETE policy on `submissions`** (by design), so this is a SQL paste, not an app
-  action; authors cascade:
-  ```sql
-  delete from public.submissions where created_at < '2026-10-01';
-  ```
-  Verified Nov 12: every row older than Oct 1 is a probe, so the statement only removes
-  junk. Do it before showing the app to anyone.
+- ~~**Four junk submissions at the top of the reader queue**~~ — **deleted Nov 12.** `curl
+  probe`, `node probe`, `titleTitle`, `hello` (all Sep 24 probes) were removed with
+  `delete from public.submissions where created_at < '2026-10-01'`, authors cascading.
+  Verified from the API afterwards: **6 submissions, 6 author rows**, and the live reader
+  queue opens on `The Last Ferry`. There is still **no DELETE policy on `submissions`**,
+  so any future cleanup is another SQL paste, not an app action.
 - **One orphan auth user:** `kennings.reader@gmail.com` was created while testing which
   domains Supabase's sign-up accepts. It has **no** `members` row, so it is invisible
   in the Staff tab and harmless, but deleting it needs a service-role key.
@@ -498,42 +496,38 @@ publishes demo accounts.
 
 Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
-### 🟠 HALF-FIXED (Nov 12, pm) — the Redirect allow-list is right; the Site URL is not
+### ✅ RESOLVED (Nov 12, evening) — the auth URLs now point at the live app
 
-Everything about password recovery is built, deployed and tested. Until this morning
-**none of it could deliver**; now half of it can. This is not a code task and the agent
-cannot do it — it needs the dashboard login (or a Management API token).
+Password recovery is built, deployed, and **routable**. Both dashboard values are now
+right, and all three probes redirect into the Pages app — including the one with **no
+`redirect_to`**, which is the Site URL itself.
 
-**Probed live on Nov 12, after the first dashboard fix landed:**
+**Probed live on Nov 12, before and after the fix:**
 
-| Sent as `redirect_to` | Where Supabase actually sends the user |
-|---|---|
-| the deployed app | `https://…/app/` ✅ **fixed** — allow-listed |
-| `http://localhost:5173/` | `http://localhost:5173/` ✅ (allow-listed) |
-| nothing, or a foreign site | `http://localhost:3000` ❌ **Site URL untouched** |
+| Sent as `redirect_to` | Before | After |
+|---|---|---|
+| the deployed app | `localhost:3000` ❌ | `https://…/app/` ✅ |
+| `http://localhost:5173/` | itself ✅ | itself ✅ |
+| nothing (the Site URL) | `localhost:3000` ❌ | `https://…/app/` ✅ |
+| a foreign site | `localhost:3000` ❌ | `https://…/app/` ✅ |
 
-So the Recovery email now reaches the app, because `lib/appUrl.ts` always supplies
-`redirectTo`. Still broken: any auth mail the app does not build itself — confirmation,
-invite, magic link — falls back to a machine that does not exist.
+How it was fixed, for the record: the **Redirect allow-list** got the Pages URL first
+(that is why recovery mail started working while nothing else did), and the **Site URL**
+was the second, later save. The Site URL is what confirmation / invite / magic-link mail
+uses, because those are not built by `lib/appUrl.ts`.
 
-**The remaining fix, either route:**
-- *Dashboard* — https://supabase.com/dashboard/project/qsynlsbltpnhzncpqerz/auth/url-configuration
-  → **Site URL** = `https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/`,
-  and add the same line to **Redirect URLs** (keep the `localhost` entries). Then **refresh
-  the page to confirm it stuck** — a silent revert is what burned two earlier attempts.
-- *API* — with a Personal Access Token (Account → Access Tokens, revoked afterwards):
-  `PATCH https://api.supabase.com/v1/projects/qsynlsbltpnhzncpqerz/config/auth` with
-  `{"site_url": "<the Pages URL>", "uri_allow_list": "http://localhost:3000/,http://localhost:5173/,<the Pages URL>"}`.
-  `GET` the same path first to see the current values.
-
-Verify in one request, no email spent (an invalid token makes GoTrue redirect without
-sending mail):
+**Re-run this whenever auth mail is suspect — it costs one request and no email:**
 
 ```bash
 curl -s -o /dev/null -D - "$URL/auth/v1/verify?token=nope&type=recovery&redirect_to=$APP_ROOT" | grep -i location
+curl -s -o /dev/null -D - "$URL/auth/v1/verify?token=nope&type=recovery" | grep -i location   # the Site URL itself
 ```
 
-`location:` must start with the Pages URL. **This is the acceptance test for the feature.**
+Both `location:` values must start with the Pages URL. **This is the acceptance test.**
+
+**Still unproven: delivery.** Routing says the link points at the app; it says nothing
+about whether Supabase's shared demo mailer delivered it (§7). Prove that once with a
+real inbox, then move auth mail to Resend.
 
 1. **#1 — Wire the Member Manager to the `members` table.** *Done and live:* roles,
    deactivate/reactivate, RLS gating, and the audit trail all work against real rows
@@ -767,12 +761,14 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
 - ~~`supabase config push` to turn off email confirmation~~ — **moot**: confirmation was
   turned off in the dashboard (`mailer_autoconfirm: true`) and `config.toml` already had
   `enable_confirmations = false`, so file and live agree.
-  ⚠️ **CORRECTED Nov 11: `site_url` and `additional_redirect_urls` were NOT fixed.** The
-  live project still has Supabase's factory default Site URL `http://localhost:3000`, and
-  its allow-list holds `localhost:3000` + `localhost:5173` but **not** the Pages URL
-  (probed — see §7). `config.toml` is right; the dashboard was never updated, because
-  `config push` needs a linked CLI that has never existed. The fix is two dashboard
-  fields, and until they are set **every auth email (password reset) links to localhost**.
+  ⚠️ **CORRECTED Nov 11, then fixed Nov 12.** For two days the live project kept
+  Supabase's factory default Site URL `http://localhost:3000`, and its allow-list held
+  `localhost:3000` + `localhost:5173` but not the Pages URL — so every auth email pointed
+  at a machine that does not exist. `config.toml` was right the whole time; the dashboard
+  was never updated, because `config push` needs a linked CLI that has never existed. Both
+  fields were set by hand on Nov 12 (allow-list first, Site URL second) and **verified with
+  the probe in §8**. Lesson: `config.toml` is not the source of truth for auth URLs — the
+  dashboard is, and only a probe tells you what the project actually believes.
 - ~~**Keep-alive cron**~~ — **done** (`.github/workflows/keep-alive.yml`, Oct 29). Pings
   `app/.env.production`'s REST endpoint every 3 days and fails loudly if the answer
   isn't 200, so a paused project shows up as a red run instead of a broken app. No
@@ -837,9 +833,15 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   help, so the account was recovered with the SQL lever in §7
   (`update auth.users set encrypted_password = crypt(...)`). Password sign-in does not
   consult `site_url`; only emailed links do. Recorded because it will happen to the club.
-- ~~Paste the decision migration~~ — **half done**: the `decided_at` column is live and the
-  feature is pushed, which unblocked `/editor/:id`. The two check constraints are still
-  unpasted, so the six-status ladder is app-enforced only.
+- ~~Paste the decision migration~~ — **done Nov 12.** The `decided_at` column went in
+  earlier; the two check constraints (`submissions_status_check`,
+  `submissions_decided_at_matches_status`) were pasted the same evening, so the six-status
+  ladder is now enforced by Postgres and not only by the UI. Nothing outside the database
+  can see a constraint, so if you ever need to re-prove it:
+  ```sql
+  select conname from pg_constraint
+  where conrelid = 'public.submissions'::regclass and contype = 'c' order by conname;
+  ```
 - ~~**Still open from week 4:** a Reader who signs in lands on `/editor`~~ — **fixed
   Nov 12** by `landingFor()` in `lib/roles.ts` plus a link on the editor wall.
 
