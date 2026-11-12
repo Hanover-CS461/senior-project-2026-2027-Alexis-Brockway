@@ -53,11 +53,18 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 12)**: `npm test` **34/34** and
-  `npm run test:e2e` **12/12**, with no skips. `app/.env.test` (gitignored) holds two
+- **Tests** — **green across the board (Nov 12)**: `npm test` **55/55** and
+  `npm run test:e2e` **14/14**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
-  test credentials are committed; a fresh clone gets 6 clean skips by design.
+  test credentials are committed; a fresh clone gets 7 clean skips by design.
+- **Demo access + export** — added Nov 12. The sign-in page lists two throwaway
+  accounts (§13's demo requirement) and signs a visitor in with one click; the
+  credentials live in `app/src/lib/demoAccounts.ts` **on purpose** (§7). The editor
+  dashboard gained an **Export** tab: submissions + authors + average score, reader
+  scores and notes, and the staff list (Chief Editor only), all as CSV read through
+  the signed-in session. A Reader now lands on `/reader` after signing in instead of
+  hitting the editor wall (§7).
 - **Decision workflow** — built Nov 10, **live Nov 10**. Six statuses in five stages:
   `Received → In review → Shortlist → { Accepted | Hold | Rejected }`. The workflow
   dropdown is separate from the decision buttons on purpose; a decision is stamped with
@@ -66,11 +73,12 @@ Submissions page on Sep 23, 2026 and live in the app.
   the ladder is enforced only by the app today. See §7 ("deployment sequencing").
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
-- **Open work** — 🔴 **top of the list is the §8 blocker**: the project's Auth URLs still
-  point at `localhost:3000`, so the password-reset email cannot deliver to anyone. It is
-  two dashboard fields (or one API call) and it is not code. After that: metadata
-  stripping (#3) and export are the substantive gaps. Issues #1–#4 (§8); #2 and #4 are
-  **closed**. §13 has the plan.
+- **Open work** — 🟠 **top of the list is the rest of the §8 blocker**: the Redirect
+  allow-list now holds the app (recovery mail delivers), but the **Site URL is still
+  `http://localhost:3000`**, so confirmation/invite/magic-link mail does not. One
+  dashboard field, not code. After that the substantive gap is **metadata stripping**
+  (#3); export landed Nov 12. Issues #1–#4 (§8); #2 and #4 are **closed**. §13 has the
+  plan.
 
 ---
 
@@ -181,9 +189,9 @@ All app commands run from `app/`:
 | `tutorial-study-guide.md` | Gitignored | Private class cheat sheet — never stage/push |
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
-| `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed) |
-| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam) |
-| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
+| `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped) |
+| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins) |
+| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
 | `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles, `password-recovery` (request form, expired link, rejected link) |
@@ -354,6 +362,25 @@ publishes demo accounts.
   *submit a manuscript*, *upload a file*, and *sign up* — and can read **nothing**
   (authors, members, ratings all return `[]`). Rotating the publishable key is never
   an incident; rotating the secret key is one click at Settings → API.
+- **The demo credentials are in the source on purpose.** `app/src/lib/demoAccounts.ts`
+  holds the two throwaway logins, and `/login` prints them. This is the §13 decision,
+  not a leak: those accounts see seeded fictional data only (verified Nov 12 — all 10
+  submissions and 9 author rows are Sep 24 probes and the Oct 29 samples), and the
+  bundle's only key is the publishable one. The real consequence to remember is that
+  **they are the same two accounts `app/.env.test` signs in as**, so `.env.test` being
+  gitignored no longer hides anything — and a visitor who changes a demo role breaks
+  `npm run test:e2e` locally. Worth a line in any handoff talk.
+- **Anything that routes on the role must wait for the member row.** `member` is null
+  both *before* the lookup finishes and for a session that has no `members` row, so a
+  page that reads `member?.role` during that gap sees a reader. `AuthProvider` now
+  exposes `memberLoading` and both `LoginPage` and `RequireAuth` wait on it; without
+  that, an editor is briefly mis-routed to `/reader` on every sign-in. `landingFor()`
+  in `lib/roles.ts` is the single rule for "where does this role belong".
+- **A CSV is executable content.** Exported cells are prefixed with an apostrophe when
+  they start with `=`, `+`, `-` or `@`, because a submission titled
+  `=HYPERLINK("http://…"&A1)` would otherwise run on open in Excel or Sheets. That is
+  `escapeCell()` in `lib/csv.ts`, and it is why the CSV builder is a pure module with
+  tests rather than string concatenation inside a button handler.
 - **Storage uploads must not use `x-upsert`.** Anon has an INSERT policy on
   `storage.objects` and deliberately **no** UPDATE policy, so an upsert fails with a
   403 "violates row-level security". A plain
@@ -401,6 +428,12 @@ publishes demo accounts.
   reset email in the project pointed at a machine that does not exist. The allow-list
   *did* accept `localhost:5173` and `localhost:3000`, which is why a link requested from a
   local dev copy looked fine while a link requested from the live site did not.
+  **Update Nov 12: half of this is now fixed.** The same probe with the app as
+  `redirect_to` returns the Pages URL, so the **Redirect allow-list now contains the
+  app** and recovery mail can deliver. The **Site URL is still `http://localhost:3000`**:
+  run the probe with no `redirect_to` (or with a foreign one) and `location:` still says
+  localhost. That leaves every auth mail the app doesn't build itself — confirmation,
+  invite, magic link — pointing at a dead machine. It is one dashboard field.
 - **A dead auth link must say so.** Supabase returns failures as
   `#error=access_denied&error_description=…`, which creates no session and fires no event;
   supabase-js ignores it and the visitor lands on the home page with no explanation (that
@@ -455,21 +488,25 @@ publishes demo accounts.
 
 Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
-### 🔴 BLOCKER (Nov 12) — the project's auth URLs still point at localhost
+### 🟠 HALF-FIXED (Nov 12, pm) — the Redirect allow-list is right; the Site URL is not
 
-Everything about password recovery is built, deployed and tested, and **none of it can
-deliver** until two values in the Supabase dashboard change. This is not a code task and
-the agent cannot do it — it needs the dashboard login (or a Management API token).
+Everything about password recovery is built, deployed and tested. Until this morning
+**none of it could deliver**; now half of it can. This is not a code task and the agent
+cannot do it — it needs the dashboard login (or a Management API token).
 
-**Probed live on Nov 12, still broken:**
+**Probed live on Nov 12, after the first dashboard fix landed:**
 
 | Sent as `redirect_to` | Where Supabase actually sends the user |
 |---|---|
-| the deployed app | `http://localhost:3000` ❌ |
-| `http://localhost:5173/` | `http://localhost:5173/` ✅ (it is allow-listed) |
-| nothing | `http://localhost:3000` ❌ |
+| the deployed app | `https://…/app/` ✅ **fixed** — allow-listed |
+| `http://localhost:5173/` | `http://localhost:5173/` ✅ (allow-listed) |
+| nothing, or a foreign site | `http://localhost:3000` ❌ **Site URL untouched** |
 
-**The fix, either route:**
+So the Recovery email now reaches the app, because `lib/appUrl.ts` always supplies
+`redirectTo`. Still broken: any auth mail the app does not build itself — confirmation,
+invite, magic link — falls back to a machine that does not exist.
+
+**The remaining fix, either route:**
 - *Dashboard* — https://supabase.com/dashboard/project/qsynlsbltpnhzncpqerz/auth/url-configuration
   → **Site URL** = `https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/`,
   and add the same line to **Redirect URLs** (keep the `localhost` entries). Then **refresh
@@ -519,8 +556,9 @@ curl -s -o /dev/null -D - "$URL/auth/v1/verify?token=nope&type=recovery&redirect
   to Resend (§7).
 - Editor dashboard remainder: reader assignments, internal discussion, decision
   letters, bulk actions.
-- **A Reader who signs in lands on `/editor`** and reads "You need an editor role to view
-  this page" — technically correct, practically a dead end. `/reader` is the fix.
+- ~~**A Reader who signs in lands on `/editor`**~~ — **fixed Nov 12.** Sign-in now
+  routes by role (`landingFor()` in `lib/roles.ts`), and the editor wall offers a link
+  to `/reader` instead of ending the story.
 - Decision letters + email via Resend (submissions now carry all six statuses; only
   the letters are missing).
 - ~~Production deploy (Netlify/Vercel)~~ → hosting decided: **GitHub Pages under
@@ -792,14 +830,21 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
 - ~~Paste the decision migration~~ — **half done**: the `decided_at` column is live and the
   feature is pushed, which unblocked `/editor/:id`. The two check constraints are still
   unpasted, so the six-status ladder is app-enforced only.
-- **Still open from week 4:** a Reader who signs in lands on `/editor` and gets "You need an
-  editor role to view this page" — a dead end on the very first click. Send non-editors to
-  `/reader` instead (five lines, in `LoginPage`'s redirect and `RequireAuth`'s message).
+- ~~**Still open from week 4:** a Reader who signs in lands on `/editor`~~ — **fixed
+  Nov 12** by `landingFor()` in `lib/roles.ts` plus a link on the editor wall.
 
 ### Week 5 — metadata stripping, docs, buffer
+- ~~Export~~ — **done Nov 12, in the app rather than a script.** The editor dashboard's
+  **Export** tab writes submissions + authors + average score, reader scores and notes,
+  and the staff list (Chief Editor only) as CSV, through the signed-in session, so RLS
+  governs it and no credential is stored anywhere. `npm run db:export` was never built
+  and is not needed: a browser button is the same data with no key to hold. Pure logic
+  in `lib/csv.ts` + `lib/exportData.ts`, 18 unit tests, one e2e that watches a real
+  download.
+- ~~Demo access~~ — **done Nov 12.** `/login` lists both demo accounts with one-click
+  sign-in (`lib/demoAccounts.ts`), and the README table is filled in.
 - Strip manuscript metadata at intake (issue #3). See the open fork below.
-- `npm run db:export` — the proposal promises every record is exportable; this is a
-  grading line item.
+
 - Final docs pass.
 
 **After the 5 weeks:** decision letters + Resend (and move **auth email** onto Resend

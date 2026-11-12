@@ -58,12 +58,13 @@ new one.
 `npm test` covers role helpers, the membership join logic, and the live RLS
 boundary. `npm run test:e2e` drives the real UI in Chromium.
 
-Six tests are **skipped unless `app/.env.test` exists** (see `.env.test.example`):
+Seven tests are **skipped unless `app/.env.test` exists** (see `.env.test.example`):
 
 - `src/lib/rls-auth.test.ts` — a signed-in reader is blind to `authors` and sees
   only their own membership row; the Chief Editor is unblinded.
-- `e2e/authenticated.spec.ts` — the reader is stopped at `/editor`, the Chief
-  Editor walks through, and a signed-in reader never sees an author's name.
+- `e2e/authenticated.spec.ts` — a reader lands in the queue and is still stopped at
+  `/editor`, the Chief Editor walks through and can export the CSV, and a signed-in
+  reader never sees an author's name.
 
 Those credentials are deliberately **not committed**, so CI runs the anonymous
 half only. Locally, filling in `.env.test` activates the rest.
@@ -73,12 +74,27 @@ half only. Locally, filling in `.env.test` activates the rest.
 Sample data is seeded (`app/supabase/seed.sql`), so the queue and reader flow have
 something to show. Every submission, author and manuscript in it is fictional.
 
-<!-- Fill in once the demo accounts are final. §13 of AGENTS.md requires them here
-     and on the login page. -->
+These two accounts are also listed on the sign-in page, so a visitor can look around
+without creating an account. They are throwaway accounts — publishing them costs
+nothing, because the only key in the bundle is the publishable one and RLS decides
+what a role can read. They are the same accounts the authenticated tests use, so
+they must keep their roles.
+
 | Account | Email | Password |
 |---|---|---|
-| Chief Editor | _to fill in_ | _to fill in_ |
-| Reader | _to fill in_ | _to fill in_ |
+| Chief Editor | `kennings.chief@example.com` | `KenningsTest2026!` |
+| Reader | `kennings.reader@example.com` | `KenningsTest2026!` |
+
+## Export
+
+The editor dashboard's **Export** tab writes what the club owns to CSV: submissions
+joined with author and average score, reader scores and notes, and (Chief Editor
+only) the staff list. Nothing is stored on a server — the queries run through the
+signed-in session, so the export can only ever contain what RLS already lets that
+person read. Cells that begin with `=`, `+`, `-` or `@` are prefixed with an
+apostrophe, so a submission titled like a spreadsheet formula cannot execute when
+the file is opened.
+
 
 ## Stack
 
@@ -91,7 +107,7 @@ maintain after graduation.
 - **Manuscript metadata is not stripped yet.** Files can still carry author
   identity in EXIF, PDF metadata, or `.docx` document properties — the one
   remaining hole in blind review. Tracked as issue #3.
-- **No export yet.** The proposal promises every record is exportable.
 - Reader notes are shown to editors without attribution, because only the Chief
-  Editor may read the `members` table.
+  Editor may read the `members` table. The export follows the same rule: the
+  scores file carries the notes but no reader column.
 - Decision letters and email (Resend) are not built.

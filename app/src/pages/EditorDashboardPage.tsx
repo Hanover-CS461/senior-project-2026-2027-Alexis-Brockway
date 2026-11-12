@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import MemberManager from '../components/MemberManager'
+import ExportPanel from '../components/ExportPanel'
 import { STATUSES, badgeClass } from '../lib/statuses'
 
 type Filter = 'All' | string
+
+type View = 'queue' | 'staff' | 'export'
 
 const statuses: Filter[] = ['All', ...STATUSES.map((s) => s.value)]
 
@@ -19,7 +22,7 @@ interface QueueItem {
 }
 
 function EditorDashboardPage() {
-  const [view, setView] = useState<'queue' | 'staff'>('queue')
+  const [view, setView] = useState<View>('queue')
   const [status, setStatus] = useState<Filter>('All')
   const [items, setItems] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,10 +94,19 @@ function EditorDashboardPage() {
         >
           Staff
         </button>
+        <button
+          type="button"
+          className={`tab ${view === 'export' ? 'active' : ''}`}
+          onClick={() => setView('export')}
+        >
+          Export
+        </button>
       </div>
 
       {view === 'staff' ? (
         <MemberManager />
+      ) : view === 'export' ? (
+        <ExportPanel />
       ) : (
         <>
           <div className="tabs">

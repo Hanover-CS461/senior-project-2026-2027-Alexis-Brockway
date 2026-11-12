@@ -657,3 +657,90 @@ p {
   cursor: pointer;
   font-size: 16px;
 }
+
+/* Demo access on the sign-in page, and the export list on the dashboard: same
+   shape, a bordered card holding labelled rows with an action on the right. */
+.demo-box,
+.export-panel {
+  max-width: 620px;
+  margin-top: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px 8px;
+  background: #fafafa;
+}
+
+.demo-box h2 {
+  font-size: 17px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.demo-box .hint,
+.export-panel .lede {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.export-panel {
+  max-width: none;
+}
+
+.export-panel .lede {
+  margin-bottom: 16px;
+}
+
+.demo-list,
+.export-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.demo-account,
+.export-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.demo-detail,
+.export-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.demo-detail strong,
+.export-detail strong {
+  font-size: 15px;
+}
+
+.demo-blurb {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.demo-credentials {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+.demo-account .btn,
+.export-row .btn {
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+}

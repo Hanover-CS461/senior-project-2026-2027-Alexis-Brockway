@@ -9,6 +9,13 @@ interface AuthState {
   loading: boolean
   member: MemberRow | null
   /**
+   * True while the member row is still being looked up. `member` is null both
+   * before that lookup finishes and for a session with no members row at all,
+   * so anything that routes on the role must wait for this to be false —
+   * otherwise an editor is briefly indistinguishable from a reader.
+   */
+  memberLoading: boolean
+  /**
    * True when the page was opened from a password-reset email. supabase-js
    * trades the #access_token fragment for a session and then fires
    * PASSWORD_RECOVERY; the router uses this to send the person to the reset
@@ -44,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [member, setMember] = useState<MemberRow | null>(null)
+  const [memberResolved, setMemberResolved] = useState(false)
   const [recovery, setRecovery] = useState(false)
 
   useEffect(() => {
@@ -64,24 +72,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!session?.user) {
       setMember(null)
+      setMemberResolved(false)
       return
     }
 
     const user = session.user
-    const loadMember = async () => {
-      const row = await joinClub(
-        {
-          id: user.id,
-          email: user.email,
-          name: (user.user_metadata?.name as string | undefined) ?? null,
-        },
-        membershipClient,
-      )
-      setMember(row)
-    }
+    let cancelled = false
+    setMemberResolved(false)
 
-    loadMember()
+    joinClub(
+      {
+        id: user.id,
+        email: user.email,
+        name: (user.user_metadata?.name as string | undefined) ?? null,
+      },
+      membershipClient,
+    )
+      .then((row) => {
+        if (!cancelled) setMember(row)
+      })
+      .catch(() => {
+        // A failed lookup leaves the role unknown; landingFor() then treats
+        // them as a reader, which is the safe direction (no author identity).
+        if (!cancelled) setMember(null)
+      })
+      .finally(() => {
+        if (!cancelled) setMemberResolved(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [session])
+
+  const memberLoading = session != null && !memberResolved
 
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -91,7 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, loading, member, recovery, acknowledgeRecovery, signOut }}
+      value={{
+        session,
+        loading,
+        member,
+        memberLoading,
+        recovery,
+        acknowledgeRecovery,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

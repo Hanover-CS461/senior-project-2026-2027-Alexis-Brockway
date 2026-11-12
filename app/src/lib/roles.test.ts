@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canManageMembers, isEditorRole } from './roles'
+import { canManageMembers, isEditorRole, landingFor } from './roles'
 
 describe('isEditorRole', () => {
   it('accepts every editor rank', () => {
@@ -29,5 +29,28 @@ describe('canManageMembers', () => {
     expect(canManageMembers('editor')).toBe(false)
     expect(canManageMembers('reader')).toBe(false)
     expect(canManageMembers(null)).toBe(false)
+  })
+})
+
+describe('landingFor', () => {
+  it('sends editors to the full queue', () => {
+    for (const role of [
+      'staff_editor',
+      'editor',
+      'co_editor',
+      'chief_editor',
+      'advisor',
+    ]) {
+      expect(landingFor(role)).toBe('/editor')
+    }
+  })
+
+  it('sends a reader to the blind queue, never the editor door', () => {
+    expect(landingFor('reader')).toBe('/reader')
+  })
+
+  it('falls back to the reader queue when the role is unknown', () => {
+    expect(landingFor(null)).toBe('/reader')
+    expect(landingFor(undefined)).toBe('/reader')
   })
 })

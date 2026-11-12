@@ -33,14 +33,25 @@ async function signIn(
 test.describe('authenticated roles', () => {
   test.skip(!hasCreds, 'TEST_* credentials not set (see app/.env.test.example)')
 
-  test('a reader is blocked from the editor dashboard', async ({ page }) => {
+  test('a reader lands in the queue, and is stopped at the editor door', async ({
+    page,
+  }) => {
     await signIn(
       page,
       process.env.TEST_READER_EMAIL!,
       process.env.TEST_READER_PASSWORD!,
     )
+
+    // Sign-in routes by role. A Reader used to land on /editor and be told they
+    // had no business there — correct, but a dead end on their first click.
+    await expect(page).toHaveURL(/\/reader$/)
+
+    await page.goto('/editor')
     await expect(
       page.getByText('You need an editor role to view this page.'),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Go to your reader queue →' }),
     ).toBeVisible()
   })
 
@@ -82,5 +93,32 @@ test.describe('authenticated roles', () => {
     ]) {
       expect(body).not.toContain(name)
     }
+  })
+
+  test('the chief editor can export the submissions as CSV', async ({
+    page,
+  }) => {
+    await signIn(
+      page,
+      process.env.TEST_CHIEF_EMAIL!,
+      process.env.TEST_CHIEF_PASSWORD!,
+    )
+    await expect(
+      page.getByRole('heading', { name: 'Editor dashboard' }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Export' }).click()
+
+    // Read-only: the export is a set of GETs through the signed-in session, so
+    // this proves the club can get its data out without mutating anything.
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Download Submissions as CSV' }).click(),
+    ])
+
+    expect(download.suggestedFilename()).toMatch(
+      /^kennings-submissions-\d{4}-\d{2}-\d{2}\.csv$/,
+    )
+    await expect(page.getByText(/Downloaded kennings-submissions-/)).toBeVisible()
   })
 })
