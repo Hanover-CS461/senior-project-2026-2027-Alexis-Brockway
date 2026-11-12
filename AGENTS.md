@@ -53,11 +53,19 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 12)**: `npm test` **55/55** and
-  `npm run test:e2e` **14/14**, with no skips. `app/.env.test` (gitignored) holds two
+- **Tests** — **green across the board (Nov 12)**: `npm test` **66/66** and
+  `npm run test:e2e` **15/15**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
-  test credentials are committed; a fresh clone gets 7 clean skips by design.
+  test credentials are committed; a fresh clone gets 7 clean skips by design. Note:
+  `src/lib/scrub.test.ts` takes ~25s on its own, because importing `pdf-lib` through
+  Vite's transform pipeline is slow on `/mnt/c` — the work is milliseconds, the module
+  graph is not.
+- **Metadata stripping** — **done Nov 12** (`src/lib/scrub.ts`), browser-side at intake:
+  images re-encoded through a canvas, `.docx` creator fields blanked, PDF info dictionary
+  cleared, `.doc` warned about. It also closed a leak nobody had noticed: the stored
+  object name used to be the author's own filename, and `manuscript_path` is visible to
+  readers (§7). Scope and residual risk are in §8 #3.
 - **Demo access + export** — added Nov 12. The sign-in page lists two throwaway
   accounts (§13's demo requirement) and signs a visitor in with one click; the
   credentials live in `app/src/lib/demoAccounts.ts` **on purpose** (§7). The editor
@@ -75,10 +83,10 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
 - **Open work** — the auth-URL blocker is **closed** (§8: all three probes now land on the
-  app), and the demo queue is clean. The substantive gap left before Nov 24 is **metadata
-  stripping** (#3), which is the one hole in blind review; decision letters, invite codes
-  and the club pilot are all after the deadline. Issues #1–#4 (§8); #2 and #4 are
-  **closed**. §13 has the plan.
+  app), the demo queue is clean, and **metadata stripping shipped Nov 12**. Nothing on the
+  critical path for Nov 24 is left; what remains is either after the deadline (decision
+  letters, invite codes, the club pilot) or the residual risks written down in §8 #3.
+  Issues #1–#4 (§8); #2, #3 and #4 are **closed**. §13 has the plan.
 
 ---
 
@@ -190,11 +198,11 @@ All app commands run from `app/`:
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped) |
-| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins) |
-| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
+| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `scrub.ts` (metadata stripping + `storageNameFor`) |
+| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
-| `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles, `password-recovery` (request form, expired link, rejected link) |
+| `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles, `password-recovery` (request form, expired link, rejected link), `metadata-scrub` (a real JPEG through a real canvas) |
 | `app/supabase/config.toml` | Current | Supabase project settings as code (project ref, auth, storage, ports) |
 | `app/supabase/tests/rls.test.sql` | Current | pgTAP policy tests (needs Supabase CLI + Docker) |
 | `app/playwright.config.ts`, `app/vite.config.ts`, `app/test/setup.ts` | Current | Test/build config; setup loads `.env.test` |
@@ -222,6 +230,7 @@ The committed `docs/_site` is generated output — don't hand-edit.
 | Supabase Edge Function | The only server-side code | sends email (planned) |
 | Resend | Transactional email | status links / decision letters (planned) |
 | Vitest + Playwright | Testing | set up and green |
+| fflate + pdf-lib | Scrubbing metadata out of uploads | `fflate` rewrites the `.docx` zip; `pdf-lib` is a **lazy chunk** (~176 kB gz), fetched only when someone submits a PDF |
 | oxlint | Linting | `npm run lint` |
 | GitHub Pages | Hosting | Free; no new accounts. App served at `/app/` under the existing Jekyll site — **not** at the site root, which would break the proposal link. The live URL is **repo-bound** (it belongs to the `Hanover-CS461` org); a custom domain is the post-deadline fix — see §13 |
 
@@ -327,10 +336,21 @@ publishes demo accounts.
 
 ### Other gotchas
 
-- **Metadata stripping is NOT done yet.** Manuscript files must be scrubbed at
-  intake — images (EXIF via `exifr`), PDFs (`pdf-lib`), and `.docx` (a zip with
-  author data in `docProps/core.xml`). Post-process server-side (edge function),
-  not in the browser. Tracked in issue #3.
+- **Metadata stripping is done in the browser, at intake** (`app/src/lib/scrub.ts`, Nov
+  12). Images are re-encoded through a canvas (EXIF/IPTC/XMP/PNG text chunks all die
+  with the old bytes), `.docx` is unzipped and its `dc:creator` / `cp:lastModifiedBy` /
+  `Company` / `Manager` fields are blanked, and PDFs get their info dictionary cleared
+  with `pdf-lib` (loaded on demand — a Word submission never downloads it). **`.doc` is
+  allowed but cannot be scrubbed**, so the form warns as soon as one is chosen; that is
+  the one format where the promise is qualified. Also: PDF XMP packets are not reached
+  by `pdf-lib`, and an author who skips the app entirely can upload straight to Storage
+  with the publishable key — the boundary there is RLS, not the form. See §8 #3.
+- **`manuscript_path` must never contain the author's filename.** It did until Nov 12
+  (`<uuid>/Alexis_Brockway_draft3.docx`), and readers can read `submissions`, so that
+  handed them the identity the whole design exists to withhold — a bigger hole than
+  EXIF, and one no amount of form design closes. Uploads now store
+  `<uuid>/manuscript.<ext>` (`storageNameFor()` in `lib/scrub.ts`). If you ever change
+  the upload path, keep the name generic.
 - **Dev email confirmation:** Supabase confirms emails by default, which breaks
   fake test accounts. Either confirm via SQL
   (`update auth.users set email_confirmed_at = now(), confirmation_token = ''
@@ -536,9 +556,18 @@ real inbox, then move auth mail to Resend.
 2. **#2 — Automated testing.** *Closed Nov 10:* Vitest **24/24**, live anon-RLS, and
    Playwright **8/8** including the three authenticated browser tests. Remaining
    optional work: the pgTAP run (needs Docker).
-3. **#3 — Strip metadata from uploaded manuscripts at intake** (exifr / pdf-lib /
-   `.docx`), server-side. Scheduled for §13 week 5; the open fork is *where* it
-   runs (Edge Function vs. browser).
+3. **#3 — Strip metadata from uploaded manuscripts at intake.** *Closed Nov 12, in the
+   browser* (`app/src/lib/scrub.ts`; reasoning in §13's open fork, now decided). What it
+   does: images are re-encoded through a canvas, `.docx` gets `dc:creator` /
+   `cp:lastModifiedBy` / `title` / `subject` / `Company` / `Manager` blanked, PDFs get
+   their info dictionary cleared. It also stopped the bigger leak — the stored path used
+   to be the author's own filename (§7). **Residual risk, stated plainly:** legacy `.doc`
+   cannot be scrubbed (the form warns), `pdf-lib` does not reach XMP packets, and anyone
+   can skip the form and upload to Storage with the publishable key. Closing that last
+   one means dropping the anon upload policy and routing uploads through an Edge Function
+   — the right long-term move, deliberately not attempted before the deadline. Proof:
+   `lib/scrub.test.ts` (11 tests, including that the PDF's *bytes* no longer contain the
+   name) and `e2e/metadata-scrub.spec.ts` (a real JPEG through a real canvas).
 4. **#4 — Activate the authenticated RLS tests.** *Closed Nov 10.* `app/.env.test`
    holds two throwaway accounts; the test-Chief was promoted to `chief_editor` and
    everything passes. The suite proves the security story both ways: through the API
@@ -855,8 +884,9 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   download.
 - ~~Demo access~~ — **done Nov 12.** `/login` lists both demo accounts with one-click
   sign-in (`lib/demoAccounts.ts`), and the README table is filled in.
-- Strip manuscript metadata at intake (issue #3). See the open fork below.
-
+- ~~Strip manuscript metadata at intake~~ — **done Nov 12, browser-side** (`lib/scrub.ts`,
+  issue #3 closed). Images re-encoded, `.docx` creator fields blanked, PDF info cleared;
+  `.doc` warned about. The upload path also stopped carrying the author's filename.
 - Final docs pass.
 
 **After the 5 weeks:** decision letters + Resend (and move **auth email** onto Resend
@@ -894,12 +924,14 @@ browser, and it is the graded deliverable. Order of operations afterwards:
 Hosting never fixes the free-tier Supabase pause — that stays the keep-alive cron's job.
 
 ### Open forks (decide before week 5)
-1. **Where does metadata stripping run?** (a) *Edge Function* — correct, and §7 already
-   says "not in the browser," but it is Deno and roughly 150 lines. (b) *Browser-side*
-   (`exifr` + `pdf-lib`) — an afternoon, but the anon key is public, so anyone can
-   upload straight to Storage and skip the app. (c) *Strictest* — drop the anon
-   upload policy and route every upload through the Edge Function, so the function is
-   the only door; airtight, but rewrites `SubmitPage`'s upload path.
+1. ~~**Where does metadata stripping run?**~~ — **decided Nov 12: browser-side**, and it
+   is built (`lib/scrub.ts`, issue #3 closed). The reasoning, since the "correct" answer
+   was the Edge Function: the adversary is a careless author whose word processor filled
+   in their name, not someone deliberately evading the app, so scrubbing what the form
+   receives removes the realistic exposure. The Edge Function needs a deployed function
+   and a service key and could not ship before the deadline; the strictest option (drop
+   the anon upload policy, route everything through the function) remains the right
+   long-term move and is written up in §8 #3 as the known residual risk.
 2. **Free tier vs. paid.** The 7-day pause is the one thing that can silently break the
    live URL after handoff. A keep-alive cron is free but can fail; a paid plan cannot
    pause. A pause only breaks the *data*, not the *page* — but a grader still sees a

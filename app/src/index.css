@@ -163,6 +163,10 @@ p {
   font-weight: 400;
 }
 
+.hint.warn {
+  color: #92400e;
+}
+
 .tabs {
   display: flex;
   gap: 8px;

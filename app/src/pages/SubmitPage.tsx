@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { getGenre, generalRequirements } from '../data/genres'
 import { supabase } from '../lib/supabase'
 import { DEFAULT_STATUS } from '../lib/statuses'
+import { formatWarning, scrubFile, storageNameFor } from '../lib/scrub'
 
 const submissionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -33,6 +34,8 @@ function SubmitPage() {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [formatHint, setFormatHint] = useState<string | null>(null)
+  const [scrubNote, setScrubNote] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
   const genreSlug = searchParams.get('genre') ?? ''
   const genre = genreSlug ? getGenre(genreSlug) : undefined
@@ -63,11 +66,23 @@ function SubmitPage() {
     try {
       const submissionId = crypto.randomUUID()
       const file = values.manuscript[0]
-      const filePath = `${submissionId}/${file.name}`
+
+      // Strip author identity out of the file before it leaves the browser.
+      // A failure here stops the submission on purpose: uploading a file whose
+      // metadata we could not read would quietly break the blind-review promise.
+      const scrubbed = await scrubFile(file)
+      const filePath = `${submissionId}/${storageNameFor(file)}`
+
+      setScrubNote(
+        scrubbed.warning ??
+          (scrubbed.changed
+            ? 'We removed the author metadata from your file before storing it.'
+            : null),
+      )
 
       const { error: uploadError } = await supabase.storage
         .from('manuscripts')
-        .upload(filePath, file)
+        .upload(filePath, scrubbed.file)
       if (uploadError) throw uploadError
 
       const { error: subError } = await supabase.from('submissions').insert({
@@ -112,6 +127,7 @@ function SubmitPage() {
           Thanks! Once email is wired up, a status link will be sent here. For
           now, this confirms the form works and validates.
         </p>
+        {scrubNote && <p className="hint">{scrubNote}</p>}
         <p className="back-link">
           <Link to="/">← Back to home</Link>
         </p>
@@ -201,9 +217,15 @@ function SubmitPage() {
           <input
             type="file"
             accept={genre.fileTypes}
-            {...register('manuscript')}
+            {...register('manuscript', {
+              onChange: (event) => {
+                const file = (event.target as HTMLInputElement).files?.[0]
+                setFormatHint(file ? formatWarning(file.name) : null)
+              },
+            })}
           />
           <span className="hint">{genre.fileHint}</span>
+          {formatHint && <span className="hint warn">{formatHint}</span>}
           {errors.manuscript && (
             <span className="error">{errors.manuscript.message}</span>
           )}

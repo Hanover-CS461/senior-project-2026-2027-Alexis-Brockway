@@ -85,6 +85,23 @@ they must keep their roles.
 | Chief Editor | `kennings.chief@example.com` | `KenningsTest2026!` |
 | Reader | `kennings.reader@example.com` | `KenningsTest2026!` |
 
+## Blind review, down to the file
+
+The database hides who wrote a submission. A file is a second way to find out, so
+intake closes that too:
+
+- **The stored name is generic.** Uploads land at `<uuid>/manuscript.<ext>`, never the
+  author's filename — `manuscript_path` is readable by readers, so
+  `Alexis_Brockway_draft3.docx` would have given the game away.
+- **Metadata is stripped in the browser before the upload.** Images are re-encoded
+  through a canvas (which drops EXIF, IPTC, XMP and PNG text chunks), `.docx` has its
+  creator / last-modified-by / title / company fields blanked, and PDFs get their info
+  dictionary cleared.
+- **What is not covered:** the legacy `.doc` format cannot be scrubbed — the form warns
+  as soon as one is chosen — and `pdf-lib` does not reach PDF XMP packets. Someone who
+  skips the form entirely can still upload straight to Storage with the publishable key;
+  that boundary is RLS, not the form. See issue #3 in `../AGENTS.md` for the plan.
+
 ## Export
 
 The editor dashboard's **Export** tab writes what the club owns to CSV: submissions
@@ -104,9 +121,8 @@ maintain after graduation.
 
 ## Known gaps
 
-- **Manuscript metadata is not stripped yet.** Files can still carry author
-  identity in EXIF, PDF metadata, or `.docx` document properties — the one
-  remaining hole in blind review. Tracked as issue #3.
+- The legacy `.doc` format cannot be scrubbed of author metadata, and PDF XMP packets
+  survive `pdf-lib` — both are named in "Blind review, down to the file" above.
 - Reader notes are shown to editors without attribution, because only the Chief
   Editor may read the `members` table. The export follows the same rule: the
   scores file carries the notes but no reader column.
