@@ -39,9 +39,10 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Password recovery** — built Nov 11 (`/forgot-password` → email → `/reset-password`).
   The emailed link deliberately points at the **app root**, not the reset route — see
   §7. A reset URL with no session says the link expired; the same page also works as a
-  change-password form when signed in. **The email leg has never been tested end to end**,
-  because the only accounts are `@example.com` (no inbox) and the free tier's built-in
-  mailer is rate-limited and spam-prone. Needs a real address to prove.
+  change-password form when signed in. **The flow is deployed but still cannot deliver:**
+  the project's dashboard Site URL is `http://localhost:3000`, so Supabase rewrites every
+  emailed link to a machine that does not exist (§7). One dashboard field fixes it; until
+  then use the SQL password reset recorded in §7.
 - **Editor dashboard** — Queue reads real data; `/editor/:id` reads real
   submission + author and saves status. **Member Manager is live**: role changes,
   soft deactivate/reactivate, and the audit trail all work against real rows.
@@ -411,6 +412,22 @@ publishes demo accounts.
   decision letters (§13). It also means the recovery flow **cannot be tested with the
   `@example.com` demo accounts** — no inbox exists. Create an account with a real address
   to prove it, and reset that account's password.
+- **Locked out and the reset email is dead? Set the password in SQL.** The SQL editor runs
+  as `postgres`, so this needs no service key and no email:
+  ```sql
+  update auth.users
+  set encrypted_password = crypt('<new password>', gen_salt('bf')), updated_at = now()
+  where email = '<their email>';
+  ```
+  Find the row with
+  `select email, created_at::date, last_sign_in_at::date from auth.users order by created_at;`
+  (`crypt`/`gen_salt` come from pgcrypto, which ships with every project; if it is missing,
+  `create extension if not exists pgcrypto;` first.) **Password sign-in never touches
+  `site_url`** — only emailed links do — which is why a locked-out user could still sign in
+  the moment the hash was set. Treat this as an emergency lever, not a feature: it skips
+  the password policy and leaves no audit row. Use it to get back in, then fix `site_url`
+  so the real recovery flow works. It cannot change a role; that is a `members` update
+  (`update public.members set role = 'chief_editor' where email = '…';`).
 - **A `<select>` is not a safe control for an irreversible action.** The status
   dropdown saves on `change`, so a mouse-wheel scroll over a focused select changes it.
   That is why decisions are buttons behind a `window.confirm`, not three more options.
