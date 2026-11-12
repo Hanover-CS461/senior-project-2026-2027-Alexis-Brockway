@@ -476,6 +476,16 @@ publishes demo accounts.
   upload by policy but cannot delete (403), so they need the dashboard,
   `supabase storage rm`, or a service-role call. Inert — no author data — but should
   not be left in a project shown to a grader. **Still a §13 task.**
+- **Four junk submissions sit at the top of the reader queue** — `curl probe`,
+  `node probe`, `titleTitle`, `hello` (all Sep 24 probes, before the seed). They are
+  the first thing a demo visitor sees on `/reader`, above the six real samples. There is
+  **no DELETE policy on `submissions`** (by design), so this is a SQL paste, not an app
+  action; authors cascade:
+  ```sql
+  delete from public.submissions where created_at < '2026-10-01';
+  ```
+  Verified Nov 12: every row older than Oct 1 is a probe, so the statement only removes
+  junk. Do it before showing the app to anyone.
 - **One orphan auth user:** `kennings.reader@gmail.com` was created while testing which
   domains Supabase's sign-up accepts. It has **no** `members` row, so it is invisible
   in the Staff tab and harmless, but deleting it needs a service-role key.
