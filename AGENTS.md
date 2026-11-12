@@ -53,8 +53,8 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 11)**: `npm test` **24/24** and
-  `npm run test:e2e` **11/11**, with no skips. `app/.env.test` (gitignored) holds two
+- **Tests** — **green across the board (Nov 12)**: `npm test` **34/34** and
+  `npm run test:e2e` **12/12**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
   test credentials are committed; a fresh clone gets 6 clean skips by design.
@@ -66,8 +66,11 @@ Submissions page on Sep 23, 2026 and live in the app.
   the ladder is enforced only by the app today. See §7 ("deployment sequencing").
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
-- **Open work** — issues #1–#4 (§8); #2 and #4 are **closed**. The remaining
-  substantive gaps are metadata stripping (#3) and export. §13 has the plan.
+- **Open work** — 🔴 **top of the list is the §8 blocker**: the project's Auth URLs still
+  point at `localhost:3000`, so the password-reset email cannot deliver to anyone. It is
+  two dashboard fields (or one API call) and it is not code. After that: metadata
+  stripping (#3) and export are the substantive gaps. Issues #1–#4 (§8); #2 and #4 are
+  **closed**. §13 has the plan.
 
 ---
 
@@ -179,13 +182,13 @@ All app commands run from `app/`:
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed) |
-| `app/src/lib/` | Current | `supabase.ts` (client), `auth.tsx` (AuthProvider/`useAuth`), `roles.ts` (pure role helpers), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam) |
-| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
+| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam) |
+| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
+| `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles, `password-recovery` (request form, expired link, rejected link) |
 | `app/supabase/config.toml` | Current | Supabase project settings as code (project ref, auth, storage, ports) |
 | `app/supabase/tests/rls.test.sql` | Current | pgTAP policy tests (needs Supabase CLI + Docker) |
-| `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles |
 | `app/playwright.config.ts`, `app/vite.config.ts`, `app/test/setup.ts` | Current | Test/build config; setup loads `.env.test` |
 | `app/.env` / `app/.env.test` | Gitignored | Supabase creds / test accounts. `.env.test` is **populated on this machine** (two throwaway accounts) but never committed |
 | `app/.env.test.example` | Current | Template for the authenticated tests |
@@ -452,6 +455,39 @@ publishes demo accounts.
 
 Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
+### 🔴 BLOCKER (Nov 12) — the project's auth URLs still point at localhost
+
+Everything about password recovery is built, deployed and tested, and **none of it can
+deliver** until two values in the Supabase dashboard change. This is not a code task and
+the agent cannot do it — it needs the dashboard login (or a Management API token).
+
+**Probed live on Nov 12, still broken:**
+
+| Sent as `redirect_to` | Where Supabase actually sends the user |
+|---|---|
+| the deployed app | `http://localhost:3000` ❌ |
+| `http://localhost:5173/` | `http://localhost:5173/` ✅ (it is allow-listed) |
+| nothing | `http://localhost:3000` ❌ |
+
+**The fix, either route:**
+- *Dashboard* — https://supabase.com/dashboard/project/qsynlsbltpnhzncpqerz/auth/url-configuration
+  → **Site URL** = `https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/`,
+  and add the same line to **Redirect URLs** (keep the `localhost` entries). Then **refresh
+  the page to confirm it stuck** — a silent revert is what burned two earlier attempts.
+- *API* — with a Personal Access Token (Account → Access Tokens, revoked afterwards):
+  `PATCH https://api.supabase.com/v1/projects/qsynlsbltpnhzncpqerz/config/auth` with
+  `{"site_url": "<the Pages URL>", "uri_allow_list": "http://localhost:3000/,http://localhost:5173/,<the Pages URL>"}`.
+  `GET` the same path first to see the current values.
+
+Verify in one request, no email spent (an invalid token makes GoTrue redirect without
+sending mail):
+
+```bash
+curl -s -o /dev/null -D - "$URL/auth/v1/verify?token=nope&type=recovery&redirect_to=$APP_ROOT" | grep -i location
+```
+
+`location:` must start with the Pages URL. **This is the acceptance test for the feature.**
+
 1. **#1 — Wire the Member Manager to the `members` table.** *Done and live:* roles,
    deactivate/reactivate, RLS gating, and the audit trail all work against real rows
    (the init migration was applied Oct 29 — see §7). *Remaining:* invite links /
@@ -539,6 +575,17 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   DB.
 - They happily **paste SQL into the Supabase SQL Editor**, but dislike clicking
   through the dashboard UI — prefer a script or do it in the app.
+- **A dashboard change they report as "saved" may not be saved — confirm it from the
+  outside before building on it.** Twice on Nov 11–12 the Auth → URL Configuration page
+  appeared to accept a new Site URL and the live project still answered `localhost:3000`.
+  The model is the invalid-token probe in §8: one request, no side effects, no inbox, and
+  it reports the truth. When they must touch a multi-field dashboard page, give the exact
+  string, say what the screen should look like, and give them a **check step that proves
+  the save landed** (refresh and re-read the field) — then verify it yourself.
+- **Prefer a credential + API call over a dashboard walkthrough when the page has bitten
+  them before.** A short-lived Personal Access Token (Account → Access Tokens, revoked
+  right after) lets the agent set the same values with one `PATCH` and prove it, which is
+  usually less effort for them than three attempts at a form.
 - **Step-by-step:** hand them one step, wait for "done," then the next.
 - **Prefer doing it over asking them to.** They will say "just do it" or "do the
   preferred" — so pick a sensible default, execute it, and report what changed. Only
@@ -726,10 +773,22 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
   is, verify by hand: Accept one seeded submission, confirm the "decided …" date appears,
   then Undo.
 
-### Week 4.5 — lock-in details ✅ (Nov 11)
-- ~~Password recovery~~ — **done**, and live. `/forgot-password` → email → `/reset-password`,
-  with an expired-link state and a change-password mode for signed-in members. Covered by
-  3 read-only e2e specs; the email leg is still unproven for lack of an inbox (§7).
+### Week 4.5 — password recovery, and the auth-URL autopsy (Nov 11–12)
+- ~~Password recovery~~ — **built and live**: `/forgot-password` → email → `/reset-password`,
+  with an expired-link state, a change-password mode for signed-in members, and a real
+  message when a link is dead. **But it cannot deliver yet** — see the blocker in §8. Three
+  failed attempts in a row were all one cause: the project's Site URL is `localhost:3000`.
+- **Chronology worth remembering**, because each step looked like a different bug:
+  1. a link requested from the local dev copy came back to `localhost:5173` and read as a
+     dead link — fixed by building links from the deployed URL (`lib/appUrl.ts`);
+  2. the failed click had *consumed* the single-use token, so the retry failed too — and a
+     failed link then landed silently on the home page, fixed in `lib/authLink.ts`;
+  3. both were symptoms; the cause was the dashboard Site URL, found only by sending an
+     invalid token to `/auth/v1/verify` and reading the redirect.
+- **Lockout, and the way out:** the user lost the password and the reset email could not
+  help, so the account was recovered with the SQL lever in §7
+  (`update auth.users set encrypted_password = crypt(...)`). Password sign-in does not
+  consult `site_url`; only emailed links do. Recorded because it will happen to the club.
 - ~~Paste the decision migration~~ — **half done**: the `decided_at` column is live and the
   feature is pushed, which unblocked `/editor/:id`. The two check constraints are still
   unpasted, so the six-status ladder is app-enforced only.
