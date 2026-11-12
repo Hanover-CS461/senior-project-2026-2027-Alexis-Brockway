@@ -2,7 +2,7 @@
 
 *Read this first.* This is the onboarding/handoff file for any AI agent (or
 human) working in this repo. It replaces the old `project-context.md`. Last
-updated **Nov 10, 2026**.
+updated **Nov 12, 2026**.
 
 ---
 
@@ -22,7 +22,7 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Nov 11, 2026)
+## 2. Current status (Nov 12, 2026)
 
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
@@ -86,7 +86,10 @@ Submissions page on Sep 23, 2026 and live in the app.
   app), the demo queue is clean, and **metadata stripping shipped Nov 12**. Nothing on the
   critical path for Nov 24 is left; what remains is either after the deadline (decision
   letters, invite codes, the club pilot) or the residual risks written down in §8 #3.
-  Issues #1–#4 (§8); #2, #3 and #4 are **closed**. §13 has the plan.
+  Issues #1–#4 (§8); #2, #3 and #4 are **closed**. §13 has the plan. Two loose ends need
+  the user's hands, not an agent's: the stray `manuscripts/probe.txt` and
+  `manuscripts/samples/probe-test.txt` objects (§7 — anon cannot delete), and one real
+  inbox to prove auth mail is *delivered*, not just routed (§8).
 
 ---
 
@@ -106,7 +109,7 @@ All app commands run from `app/`:
 | `npm run dev` | Vite dev server (add `-- --host 0.0.0.0` so a Windows browser can reach WSL) |
 | `npm run build` | `tsc -b && vite build` |
 | `npm run lint` | `oxlint` (warnings only right now; must stay exit-0) |
-| `npm test` | Vitest: unit + live anon-RLS tests |
+| `npm test` | Vitest: unit + live anon-RLS tests. Takes ~25s: importing `pdf-lib` through Vite's transform pipeline is slow on `/mnt/c` (see §2) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:e2e` | Playwright (starts/reuses the dev server) |
 | `npm run db:login` | One-time: log the CLI into your Supabase account (browser/paste token) |
@@ -249,7 +252,9 @@ Reader cannot read identity even by calling the database directly.
 
 **Tables** (`app/supabase/migrations/`):
 - `submissions` — `id, title, genre, status, decided_at, hanover_student,
-  manuscript_path, created_at`. **No author identity here** (readers may read this).
+  manuscript_path, created_at`. **No author identity here** (readers may read this) —
+  which is why `manuscript_path` is `<uuid>/manuscript.<ext>` and never the author's
+  filename (decision 17, §9).
   Two check constraints make the workflow structural (`20261110000000`):
   `submissions_status_check` limits `status` to the six ladder values, and
   `submissions_decided_at_matches_status` requires a decision and its timestamp to
@@ -405,6 +410,16 @@ publishes demo accounts.
   `storage.objects` and deliberately **no** UPDATE policy, so an upsert fails with a
   403 "violates row-level security". A plain
   `POST /storage/v1/object/manuscripts/<path>` works.
+- **A read-only suite cannot test an upload by uploading.** There is no DELETE policy on
+  `submissions` and anon cannot delete Storage objects, so a browser test that pressed
+  Submit would leave a permanent row in the project a grader looks at. The scrubbing spec
+  gets around it by importing the app's own module *in the page* — in dev, Vite serves
+  `/src/lib/scrub.ts`, so `page.evaluate(() => import('/src/lib/scrub.ts'))` runs the real
+  scrubber on a real `File` with no form and no write
+  (`e2e/metadata-scrub.spec.ts`). Use the same trick for any other intake logic that
+  cannot be exercised without writing. Two consequences to remember: the spec only works
+  against the dev server (the deployed bundle has no per-module URLs), and the image
+  path — which needs a canvas — is the one piece of scrubbing that cannot be a unit test.
 - **Blank `.env.test` values are not "absent".** `process.env.X ?? fallback` keeps the
   empty string, so a template-following `.env.test` with `TEST_SUPABASE_URL=` silently
   skipped the whole authenticated suite. `rls-auth.test.ts` now trims and treats `''`
@@ -631,6 +646,16 @@ real inbox, then move auth mail to Resend.
     publishable key, so the app's boundary is only ever the RLS boundary. If an Edge
     Function ever needs elevated writes, it gets one named, non-`VITE_` secret used via
     `@supabase/server`'s `withSupabase({ auth: 'secret' })`.
+16. **Metadata is stripped in the browser, at intake** (Nov 12), not in an Edge Function.
+    The adversary is a careless author whose word processor filled in their name, not
+    someone deliberately evading the app, so scrubbing what the form receives removes the
+    realistic exposure. An Edge Function would be stricter and could not ship before the
+    deadline. The residual hole — an author who skips the form and uploads straight to
+    Storage with the publishable key — is written down in §8 #3 rather than papered over.
+17. **The stored object name is generic on purpose** (`<uuid>/manuscript.<ext>`).
+    `manuscript_path` is visible to readers, so the author's filename in that path leaked
+    the identity that blind review exists to withhold. Nothing may reintroduce it: no
+    original filenames, no author name in the path, ever.
 
 ---
 
