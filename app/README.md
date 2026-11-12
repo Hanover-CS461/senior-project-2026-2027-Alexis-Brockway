@@ -127,3 +127,18 @@ maintain after graduation.
   Editor may read the `members` table. The export follows the same rule: the
   scores file carries the notes but no reader column.
 - Decision letters and email (Resend) are not built.
+- Auth email rides Supabase's built-in demo mailer, which is rate-limited to a
+  handful per hour and often lands in spam. Password recovery *routes* correctly — a
+  reset link always comes back to the deployed app, not to `localhost` — but delivery
+  to a real inbox has not been verified. Production auth mail belongs on Resend, like
+  the decision letters will.
+- Sign-up is open. Anyone who finds the sign-in page can create an account, and
+  they join as a Reader; there are no invite codes yet. The boundary that still holds
+  is the one that matters: a Reader cannot read the `authors` table, so a stranger
+  with an account sees manuscripts, never names.
+- The free tier pauses the database after about a week of inactivity, and a paused
+  project is a broken queue even though the page still loads.
+  `.github/workflows/keep-alive.yml` pings it every three days for exactly that reason:
+  a **red run means the project is paused**, and it needs reactivating from the
+  Supabase dashboard. GitHub also disables scheduled workflows after 60 days of repo
+  inactivity, so any commit restarts the cron.

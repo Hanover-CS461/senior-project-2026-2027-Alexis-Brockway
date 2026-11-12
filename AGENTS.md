@@ -86,10 +86,12 @@ Submissions page on Sep 23, 2026 and live in the app.
   app), the demo queue is clean, and **metadata stripping shipped Nov 12**. Nothing on the
   critical path for Nov 24 is left; what remains is either after the deadline (decision
   letters, invite codes, the club pilot) or the residual risks written down in §8 #3.
-  Issues #1–#4 (§8); #2, #3 and #4 are **closed**. §13 has the plan. Two loose ends need
-  the user's hands, not an agent's: the stray `manuscripts/probe.txt` and
-  `manuscripts/samples/probe-test.txt` objects (§7 — anon cannot delete), and one real
-  inbox to prove auth mail is *delivered*, not just routed (§8).
+  Issues #1–#4 (§8) are all **closed on GitHub** as of Nov 12, each with a closing note
+  recording what actually shipped and where it deviated from the original plan. §13 has
+  the plan. Two loose ends need the user's hands, not an agent's: the stray
+  `manuscripts/probe.txt` and `manuscripts/samples/probe-test.txt` objects (§7 — anon
+  cannot delete), and one real inbox to prove auth mail is *delivered*, not just routed
+  (§8).
 
 ---
 
@@ -588,7 +590,7 @@ real inbox, then move auth mail to Resend.
    everything passes. The suite proves the security story both ways: through the API
    (`is_editor()` false, `SELECT authors` returns `[]`, exactly one visible `members`
    row) and through the browser (a reader sees the queue but no author identity). A
-   fresh clone (no `.env.test`) still gets 6 clean skips, and CI has no credentials by
+   fresh clone (no `.env.test`) still gets 7 clean skips, and CI has no credentials by
    design.
 
 ### Other known gaps / next candidates
