@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { landingFor } from '../lib/roles'
 import { DEMO_ACCOUNTS, type DemoAccount } from '../lib/demoAccounts'
+import PasswordField from '../components/PasswordField'
 
 type Mode = 'signin' | 'signup'
 
@@ -111,14 +112,12 @@ function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={setPassword}
+          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+        />
         {mode === 'signup' && (
           <p className="hint">
             New accounts join as a Reader. A Chief Editor can raise anyone's role

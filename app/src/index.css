@@ -609,7 +609,8 @@ p {
   margin-top: 24px;
 }
 
-.form label {
+.form label,
+.form .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -653,6 +654,43 @@ p {
   width: 18px;
   height: 18px;
   accent-color: var(--teal);
+}
+
+/* A password input with a Show/Hide toggle inside its right edge. The extra
+   padding-right keeps a long password from running underneath the toggle. */
+.password-field {
+  position: relative;
+  display: flex;
+}
+
+.password-field input {
+  flex: 1;
+  padding-right: 68px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  text-decoration: underline;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
 }
 
 .form .btn {

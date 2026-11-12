@@ -20,7 +20,9 @@ async function signIn(
 ) {
   await page.goto('/login')
   await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
+  // exact: getByLabel matches on a substring, so a bare 'Password' also hits
+  // the "Show password" toggle that sits beside the field.
+  await page.getByLabel('Password', { exact: true }).fill(password)
   await page.locator('form button[type="submit"]').click()
 
   // click() resolves the moment the event is dispatched, not when the

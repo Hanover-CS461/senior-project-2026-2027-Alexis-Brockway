@@ -5,6 +5,7 @@ import { authLinkError, supabase } from '../lib/supabase'
 import { friendlyAuthLinkError } from '../lib/authLink'
 import { useAuth } from '../lib/auth'
 import { isEditorRole } from '../lib/roles'
+import PasswordField from '../components/PasswordField'
 
 // Matches minimum_password_length in app/supabase/config.toml. Checking it here
 // turns a server error into a sentence next to the field.
@@ -116,24 +117,20 @@ function ResetPasswordPage() {
       </p>
 
       <form className="form" onSubmit={onSubmit}>
-        <label>
-          New password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Repeat it
-          <input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
-          />
-        </label>
+        <PasswordField
+          label="New password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          required
+        />
+        <PasswordField
+          label="Repeat it"
+          value={confirm}
+          onChange={setConfirm}
+          autoComplete="new-password"
+          required
+        />
         {error && <p className="error">{error}</p>}
         <button type="submit" className="btn" disabled={busy}>
           {busy ? 'Saving…' : 'Save new password'}

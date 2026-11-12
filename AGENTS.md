@@ -35,7 +35,9 @@ Submissions page on Sep 23, 2026 and live in the app.
   longer fires** — `member_count()` is 4, so a new sign-up joins as a Reader.
   **Email confirmation is now OFF** (`mailer_autoconfirm: true` live, and
   `config.toml` already had `enable_confirmations = false`), so sign-up returns a
-  live session immediately. See §7.
+  live session immediately. See §7. All three password fields — sign-in, and both
+  halves of the reset form — carry a **Show/Hide toggle** (Nov 12), so a password can be
+  checked before it is submitted.
 - **Password recovery** — built Nov 11 (`/forgot-password` → email → `/reset-password`).
   The emailed link deliberately points at the **app root**, not the reset route — see
   §7. A reset URL with no session says the link expired; the same page also works as a
@@ -432,6 +434,15 @@ publishes demo accounts.
   looked exactly like a broken auth guard. The helper now waits for the post-login
   redirect (`expect(page).not.toHaveURL(/\/login$/)`). Any future spec that signs in
   must do the same, or await a heading.
+- **`getByLabel('Password')` is a substring match, so it also hits the "Show password"
+  toggle.** The password fields now carry a Show/Hide button whose `aria-label` contains
+  the word "password", and Playwright matched both the input and the button — a strict-mode
+  violation in `authenticated.spec.ts`'s sign-in helper. Pass `{ exact: true }` when
+  targeting the field. Two related traps in the same component
+  (`components/PasswordField.tsx`): the toggle must be a **sibling** of the `<label>`, not
+  a child, or it joins the label's control and renames the input to "Password Show
+  password" for a screen reader; and it must say `type="button"`, or clicking it submits
+  the form. `e2e/password-toggle.spec.ts` covers both.
 - **Deployment sequencing: paste the migration before pushing code that reads a new
   column.** PostgREST returns `42703 column … does not exist` for a `select` of a
   column the table doesn't have yet, which blanks the page. Because the CLI has never
