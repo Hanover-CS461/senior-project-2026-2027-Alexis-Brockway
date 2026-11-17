@@ -307,13 +307,20 @@ Reader cannot read identity even by calling the database directly.
   has **no** SELECT on anything.
 - active staff may SELECT submissions and download manuscripts; editors may
   UPDATE submissions and SELECT authors.
-- members may INSERT their own row once — role `reader`, **or** `chief_editor`
-  only when `member_count() = 0` (the bootstrap rule). They may read their own
-  row; the Chief Editor may read/update all rows.
+- members may INSERT their own row once — role `reader` **with `active = false`**,
+  or `chief_editor` **with `active = true`** only when `member_count() = 0` (the
+  bootstrap rule, and it must stay active or a fresh project could never be
+  bootstrapped). They may read their own row; the Chief Editor may read/update all
+  rows. Since `20261117000000`, `active` also **defaults** to `false`, so a new
+  sign-up is a pending reader and `is_active_member()` hides the work from it until
+  the Chief Editor activates it (issue #5). The policy is what makes that a rule
+  rather than a convention: a hand-rolled insert claiming `active = true` is
+  refused.
 
 **Revocation is immediate:** `is_editor()`, `is_active_member()`, and
 `is_chief_editor()` all check `active`, so deactivating a member cuts access on
-the next request without touching their token.
+the next request without touching their token. The same check is what makes a new
+sign-up harmless: it can read nothing until someone flips the flag.
 
 **Live DB facts (introspected Oct 13, 2026):** `members` has
 `id,user_id,email,name,role,active,created_at`; `member_count()` returns 1;
@@ -583,6 +590,21 @@ publishes demo accounts.
   the outside, which is why `demo-reset.sql`'s delete block is commented out. Probe the
   rows before writing any statement that names a table you did not seed, and keep personal
   addresses out of `STATUS.md`/`AGENTS.md` — this repo is public.
+- **A new sign-up is a pending stranger, and the UI has to say so.** Since
+  `20261117000000`, `members.active` defaults to `false` and the join policy refuses
+  an insert that claims otherwise, so a reader who signs up sees **nothing** until
+  the Chief Editor activates them — `is_active_member()` is what hides the queue, and
+  it was already correct. Two traps worth knowing: (1) `MemberRow.active` is
+  *optional* in the type so a role check can omit it, and `isPendingApproval()`
+  deliberately fails closed (`active !== true`), or a query that forgot to select the
+  column would silently unlock an unpublished-work queue; (2) the bootstrap
+  `chief_editor` branch must keep `active = true`, or a brand-new project's first
+  user would be gated by the very rule they exist to override. Approval is the Chief
+  Editor's alone by decision — letting any editor approve means widening the
+  `members` SELECT policy, which hands every editor the whole staff list. An
+  authenticated e2e test for the pending screen would need a sign-up, and the suites
+  are read-only (§3), so that screen is covered by `roles.test.ts` and a manual
+  check instead.
 - **OWASP Top 10** is the security checklist; **broken access control** is the
   project's primary risk (the whole product is a permission boundary).
 
@@ -604,6 +626,16 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   branch kept active or the project becomes un-bootstrappable. Open decision recorded
   in the issue: only the chief can read `members`, so "any editor approves" means
   widening that policy and handing every editor the staff list.
+  **Built Nov 17 (`20261117000000_reader_approval.sql`), chief-only fork.** `active`
+  now defaults to `false`, the join policy *refuses* a self-insert that claims
+  `active = true` (the app alone is not the rule — a hand-rolled request is), the
+  bootstrap chief branch stays active so a fresh project can still be born, and
+  `joinClub` sends the flag explicitly so the unit suite can prove it.
+  `RequireAuth` renders a "waiting for approval" screen instead of an empty queue
+  that would read as a bug, and the Staff tab says that activating an inactive row
+  is the approval act. **Pending: the migration still has to be pasted** (no linked
+  CLI), and the student who signed up on Nov 17 is already active — this changes
+  future sign-ups, not past ones.
 - **#6 — Let editors assign submissions to readers for a reading week.** A flat queue
   means one story gets read ten times and another by nobody. Proposes an `assignments`
   table keyed by `week_of`, reader-scoped RLS, an *Assigned to you* section on the

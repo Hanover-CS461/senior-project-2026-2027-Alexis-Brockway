@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { canManageMembers, isEditorRole, landingFor } from './roles'
+import {
+  canManageMembers,
+  isEditorRole,
+  isPendingApproval,
+  landingFor,
+} from './roles'
 
 describe('isEditorRole', () => {
   it('accepts every editor rank', () => {
@@ -52,5 +57,29 @@ describe('landingFor', () => {
   it('falls back to the reader queue when the role is unknown', () => {
     expect(landingFor(null)).toBe('/reader')
     expect(landingFor(undefined)).toBe('/reader')
+  })
+})
+
+describe('isPendingApproval', () => {
+  it('flags a reader who signed up and has not been activated', () => {
+    expect(isPendingApproval({ active: false })).toBe(true)
+  })
+
+  it('lets an approved member through', () => {
+    expect(isPendingApproval({ active: true })).toBe(false)
+  })
+
+  it('treats a row with no active flag as unapproved, not as approved', () => {
+    // Fails closed: a query that forgot to select `active` must not open a queue
+    // that holds unpublished work.
+    expect(isPendingApproval({})).toBe(true)
+    expect(isPendingApproval({ active: undefined })).toBe(true)
+  })
+
+  it('does not call a signed-out visitor pending', () => {
+    // `member` is null before the lookup finishes and for a session with no
+    // members row. Neither is this state — RequireAuth handles both separately.
+    expect(isPendingApproval(null)).toBe(false)
+    expect(isPendingApproval(undefined)).toBe(false)
   })
 })

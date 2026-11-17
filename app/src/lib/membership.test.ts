@@ -11,11 +11,17 @@ function makeClient(options: {
       name: string
       email: string
       role: MemberRow['role']
+      active: boolean
     }): Promise<MemberRow | null> => {
       if (row.role === 'chief_editor' && options.chiefAccepted === false) {
         return null
       }
-      return { user_id: row.user_id, role: row.role, name: row.name }
+      return {
+        user_id: row.user_id,
+        role: row.role,
+        name: row.name,
+        active: row.active,
+      }
     },
   )
 
@@ -35,6 +41,7 @@ describe('joinClub', () => {
       user_id: 'user-1',
       role: 'reader',
       name: 'Alex Writer',
+      active: true,
     }
     const { client, insertMember } = makeClient({ existing })
 
@@ -42,14 +49,40 @@ describe('joinClub', () => {
     expect(insertMember).not.toHaveBeenCalled()
   })
 
-  it('makes the first member the chief editor', async () => {
-    const { client } = makeClient({ existing: null, chiefAccepted: true })
+  it('makes the first member the chief editor, and an active one', async () => {
+    const { client, insertMember } = makeClient({
+      existing: null,
+      chiefAccepted: true,
+    })
 
     await expect(joinClub(user, client)).resolves.toEqual({
       user_id: 'user-1',
       role: 'chief_editor',
       name: 'Alex Writer',
+      active: true,
     })
+    expect(insertMember).toHaveBeenCalledTimes(1)
+  })
+
+  it('joins everyone after the first as a reader, waiting for approval', async () => {
+    // Issue #5: a new account must start inactive, or it can read the whole
+    // unpublished queue seconds after signing up. The policy in
+    // 20261117000000_reader_approval.sql refuses an insert that claims otherwise.
+    const { client, insertMember } = makeClient({
+      existing: null,
+      chiefAccepted: false,
+    })
+
+    await expect(joinClub(user, client)).resolves.toEqual({
+      user_id: 'user-1',
+      role: 'reader',
+      name: 'Alex Writer',
+      active: false,
+    })
+    expect(insertMember).toHaveBeenCalledTimes(2)
+    expect(insertMember).toHaveBeenLastCalledWith(
+      expect.objectContaining({ role: 'reader', active: false }),
+    )
   })
 
   it('falls back to reader when the chief editor claim is refused', async () => {
@@ -62,6 +95,7 @@ describe('joinClub', () => {
       user_id: 'user-1',
       role: 'reader',
       name: 'Alex Writer',
+      active: false,
     })
     expect(insertMember).toHaveBeenCalledTimes(2)
   })

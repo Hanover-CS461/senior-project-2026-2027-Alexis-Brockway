@@ -119,7 +119,9 @@ function MemberManager() {
       <h2>Staff</h2>
       <p className="hint">
         Change roles or deactivate members. Deactivating is a soft delete —
-        their history is kept, but they lose access immediately.
+        their history is kept, but they lose access immediately. New sign-ups
+        arrive <strong>inactive</strong>: activating one is how you approve a
+        reader, and until you do they can see nothing.
       </p>
 
       {error && <p className="error">{error}</p>}
@@ -165,7 +167,7 @@ function MemberManager() {
                     <span
                       className={`badge ${m.active ? 'badge-in-review' : 'badge-received'}`}
                     >
-                      {m.active ? 'Active' : 'Deactivated'}
+                      {m.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td>
@@ -175,7 +177,7 @@ function MemberManager() {
                       disabled={isSelf || busy}
                       onClick={() => toggleActive(m)}
                     >
-                      {m.active ? 'Deactivate' : 'Reactivate'}
+                      {m.active ? 'Deactivate' : 'Activate'}
                     </button>
                   </td>
                 </tr>

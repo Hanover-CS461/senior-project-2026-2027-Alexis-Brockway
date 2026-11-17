@@ -84,6 +84,10 @@ seeded pieces; it deliberately leaves the seventh alone.
 
 ## Shipped today (committed and deployed)
 
+- **#5 phase 1 — a new reader waits for approval.** `members.active` now defaults to
+  `false`, the join policy refuses a self-insert that claims `active = true`, and the
+  app shows a "waiting for approval" screen instead of an empty queue. Chief-only, by
+  design. Pending: the migration paste (below).
 - **`74c4fa0`** — `demo-reset.sql` now re-seeds one rating instead of leaving the
   demo with none, plus `deploy-pages@v5` (green), the Node-22 documentation fix, a
   teaching-vs-real callout in tutorial part 4, and the live-state probe written down
@@ -152,10 +156,14 @@ history.
 
 ### Needs your hands (four small things, no code)
 
-1. **Paste `app/supabase/demo-reset.sql`** into the dashboard SQL editor — the CLI
-   still isn't linked, so this is the one step I can't run. It restores the six
-   seed statuses, clears the junk ratings, puts one sensible rating back, and
-   re-asserts both demo roles. Its own trailing `SELECT`s are the receipt.
+1. **Paste two files** into the dashboard SQL editor (the CLI isn't linked, so this
+   is the one thing I can't run):
+   - `app/supabase/demo-reset.sql` — restores the six seed statuses, clears the junk
+     ratings, puts one sensible rating back, re-asserts both demo roles.
+   - `app/supabase/migrations/20261117000000_reader_approval.sql` — makes a new
+     sign-up a pending reader. The app half is live already; this is the half that
+     stops a hand-rolled request from approving itself.
+   Each file ends in `select`s that print what it did.
 2. **Decide what happens to the seventh submission** (the Nov 17 one from a Hanover
    student, now `Accepted`). It is not sample data, so I won't touch it.
 3. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
@@ -175,7 +183,7 @@ history.
 |---|---|---|
 | 1 | **#8 phase 0** — Resend as Supabase Auth's SMTP | One day, no app code, turns password recovery from "routes correctly" into "delivers" |
 | 2 | **#7 phase 2** — delete the published demo logins | **A gate, not a date:** no published credential may exist when the first real manuscript arrives. The switch (phase 1) is done; the accounts still exist |
-| 3 | **#5** — approve readers | Stops strangers reading unpublished work |
+| 3 | **#5** — approve readers | **Built, waiting on one paste.** Until it lands, the app half already gates new sign-ups, but only the policy stops a hand-rolled insert |
 | 4 | **#6** — weekly assignments | Depends on #5; both change what a reader sees |
 
 ### Decisions waiting on you

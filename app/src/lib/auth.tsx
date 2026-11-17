@@ -32,7 +32,7 @@ const membershipClient: MembershipClient = {
   async findMember(userId) {
     const { data } = await supabase
       .from('members')
-      .select('user_id, role, name')
+      .select('user_id, role, name, active')
       .eq('user_id', userId)
       .maybeSingle()
     return data
@@ -41,7 +41,7 @@ const membershipClient: MembershipClient = {
     const { data } = await supabase
       .from('members')
       .insert(row)
-      .select('user_id, role, name')
+      .select('user_id, role, name, active')
       .maybeSingle()
     return data
   },
