@@ -8,7 +8,7 @@ nothing to create and nothing to install. Start at **Submit**, then sign in as
 the Reader to see the blind queue, then as the Chief Editor to see the
 full view, the ratings, and the CSV export.
 
-[![QR code for the live app](assets/app-qr.png)](app/)
+<a href="app/"><img src="assets/app-qr.png" width="220" height="220" alt="QR code for the live app"></a>
 
 Scan that with a phone to open the same app.
 
