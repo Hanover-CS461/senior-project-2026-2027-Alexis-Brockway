@@ -94,6 +94,17 @@ Submissions page on Sep 23, 2026 and live in the app.
   `manuscripts/probe.txt` and `manuscripts/samples/probe-test.txt` objects (§7 — anon
   cannot delete), and one real inbox to prove auth mail is *delivered*, not just routed
   (§8).
+- **Verified end-to-end Nov 17, 2026** (read-only; nothing about the app changed):
+  `npm test` **66/66**, `npm run test:e2e` **17/17**, live site and `/app/` both **200**,
+  keep-alive cron green Nov 13 and Nov 16, and a browser pass over the *deployed* URL
+  **16/16**. What that pass proved: both demo accounts land where they should (reader →
+  `/reader`, chief → `/editor`); the reader queue shows all six seeded pieces and no
+  author contact fields; the editor detail page shows author name + email and the
+  `2.0 / 5` average; the CSV export downloads; `/app/submit` survives the Pages fallback;
+  and refreshing a deep `/app/editor/<id>` link stays put. No console errors on any page.
+  So every "believed true but unconfirmed since Nov 12" item in §8 is now confirmed, and
+  what remains before the deadline needs the user's hands only (bucket cleanup, one real
+  inbox).
 
 ---
 

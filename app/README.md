@@ -69,6 +69,11 @@ Seven tests are **skipped unless `app/.env.test` exists** (see `.env.test.exampl
 Those credentials are deliberately **not committed**, so CI runs the anonymous
 half only. Locally, filling in `.env.test` activates the rest.
 
+Last full run: **Nov 17, 2026** — `npm test` **66/66**, `npm run test:e2e`
+**17/17**, plus a read-only pass over the *deployed* URL (both demo accounts, the
+reader's blindness, the CSV download, and a refresh on a deep editor link),
+16/16 checks, no console errors.
+
 ## Demo access
 
 Sample data is seeded (`app/supabase/seed.sql`), so the queue and reader flow have
@@ -136,6 +141,11 @@ maintain after graduation.
   they join as a Reader; there are no invite codes yet. The boundary that still holds
   is the one that matters: a Reader cannot read the `authors` table, so a stranger
   with an account sees manuscripts, never names.
+- Two stray probe objects sit in the `manuscripts` bucket — `manuscripts/probe.txt`
+  and `manuscripts/samples/probe-test.txt` — left by the October upload tests. They
+  hold no author data, and the app cannot delete them (anonymous visitors have an
+  insert policy on Storage and no delete policy), so removing them needs the Supabase
+  dashboard or a service-role call.
 - The free tier pauses the database after about a week of inactivity, and a paused
   project is a broken queue even though the page still loads.
   `.github/workflows/keep-alive.yml` pings it every three days for exactly that reason:
