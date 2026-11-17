@@ -90,6 +90,13 @@ they must keep their roles.
 | Chief Editor | `kennings.chief@example.com` | `KenningsTest2026!` |
 | Reader | `kennings.reader@example.com` | `KenningsTest2026!` |
 
+Because those logins are public, so is the power to change a decision, wipe a
+score, or demote a role. The data is fictional, so it costs nothing — but it does
+make the demo drift, and demoting the demo Chief Editor breaks the local
+browser tests. `app/supabase/demo-reset.sql` is the undo: paste it into the
+Supabase SQL editor and the six sample statuses, the ratings, and both demo roles
+go back to their seeded values.
+
 ## Blind review, down to the file
 
 The database hides who wrote a submission. A file is a second way to find out, so

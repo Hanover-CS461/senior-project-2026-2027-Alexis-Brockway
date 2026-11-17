@@ -207,9 +207,11 @@ All app commands run from `app/`:
 |---|---|---|
 | `brainstorm.md`, `features.md`, `proposal.md`, `proposal-simple.md` | Historical | Original idea/proposal material (old stack; kept, not authoritative) |
 | `AGENTS.md` | **Current** | This file |
-| `docs/` | **Live site** | Jekyll site deployed to GitHub Pages |
+| `docs/` | **Live site** | Jekyll site deployed to GitHub Pages. `index.md` links the live app at `/app/` — it did not until Nov 17, so the app was reachable only by someone who already knew the subpath |
 | `docs/proposal.md` | Current | Proposal as rendered on the site |
 | `docs/tutorial/` | Live | 7-page Jekyll tutorial "Build a Blind-Review Submission Form with Supabase" |
+| `docs/handoff.md` | Live | One page for the club: what they inherit, the free-tier pause ritual, the demo-reset lever, and what is not built |
+| `docs/assets/app-qr.png` | Live | QR code for the app URL, generated Nov 17 for a poster; regenerate with any QR service if the URL changes |
 | `docs/slides/` | Live | Marp slide deck + custom Cayman theme |
 | `.github/workflows/jekyll-gh-pages.yml` | Live | Builds Jekyll + Marp, deploys to Pages |
 | `tutorial-study-guide.md` | Gitignored | Private class cheat sheet — never stage/push |
@@ -229,6 +231,7 @@ All app commands run from `app/`:
 | `app/.env.production` | Current | Committed project URL + publishable key, so the Pages build needs no secrets |
 | `app/README.md` | Current | Real project docs (live URLs, RLS matrix, commands, known gaps) — replaced the Vite boilerplate Oct 29 |
 | `app/supabase/seed.sql` | **Current** | Six sample submissions + authors (`on conflict do nothing`), applied to the live project Oct 29; matching sample manuscripts live under the `manuscripts/samples/` storage prefix |
+| `app/supabase/demo-reset.sql` | **Current** | Paste-to-undo for a public demo (Nov 17): restores the six seed statuses, clears sample ratings, puts the two demo logins back in their roles. Only the optional block at the end can destroy rows, and it is commented out |
 | `app/supabase/functions/` | **Planned** (§13 wk 5) | Edge Functions — metadata stripping (issue #3), decision-letter email |
 | `docs/404.html` | Current | GitHub Pages fallback: bounces `/app/*` deep links back into the SPA, leaves real 404s alone |
 | `netlify.toml` / `vercel.json` | Not needed | Hosting is GitHub Pages (§5); no static-host config required |
