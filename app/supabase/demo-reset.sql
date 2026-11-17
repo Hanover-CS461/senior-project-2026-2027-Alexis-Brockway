@@ -55,8 +55,9 @@ where submission_id in (
 -- up in the editor's ratings summary too.
 --
 -- Keyed on (submission_id, reader_id), so pasting this file twice is harmless.
--- The `where exists` guard makes it a no-op instead of a foreign-key error if
--- the demo accounts are ever deleted (issue #7 phase 2).
+-- The join on `auth.users` is the guard: if the demo accounts are ever deleted
+-- (issue #7 phase 2), the select returns no rows and this does nothing instead of
+-- failing on a foreign key.
 insert into public.ratings (submission_id, reader_id, score, notes, recused)
 select
   'a2222222-2222-4222-8222-222222222222'::uuid,
