@@ -578,8 +578,31 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   in keeping with the project, but hides unassigned stories from everyone) and the
   obstacle that an assignment UI needs a narrow `list_readers()` function, because
   editors cannot read `members`.
-- **Shared blocker, written into both:** an approval and an assignment are *writes*, and
-  the test suites are read-only by design (§3) because there is no DELETE policy on
+- **#7 — Take the published demo logins out before a real reading period.** Not
+  cosmetic: the published **Chief Editor** can read `authors`, so the day Kennings opens
+  a real period with the demo box live, anyone with the URL is one click from every
+  writer's identity — and every reader's, which is what #5 addresses from the other
+  side. Proposes a build-time switch (`VITE_DEMO_MODE`) so a live build's bundle never
+  contains the credentials at all, verified by grepping `dist/assets/*.js` rather than
+  looking at the page. Records the deletion trap: `member_audit.target_user_id` is
+  `references auth.users(id)` **without `ON DELETE CASCADE`**, so deleting a demo auth
+  user fails until the audit rows naming it are removed first; `members`/`ratings`
+  cascade, the audit table does not. Also records that rotation is not a fix — the
+  passwords are in git history, so the accounts must be deleted — and that
+  `e2e/editor-gating.spec.ts` asserts the demo box works, so it must become
+  flag-conditional. **This one is a gate, not a date: no published credential may exist
+  when the first real manuscript arrives.**
+- **#8 — Send real email.** Phase 0 is Resend as Supabase Auth's SMTP (the
+  `[auth.email.smtp]` block already sitting commented-out in `config.toml`), which turns
+  password recovery from "works in a demo" into "works" with no app code — blocked on
+  the club's DNS for SPF/DKIM, since Resend will not send from a domain you cannot
+  verify. Phase 1 is decision letters, and its design point is that **deciding and
+  notifying must be separate acts**: a decision can be undone, so an inline send turns
+  Undo into a correction letter to a real writer. Hence an `email_outbox` table drained
+  by an Edge Function, with `unique (submission_id, kind)` making a double-send
+  impossible and a Staff-tab view making failures visible and retryable.
+- **Shared blocker, written into #5 and #6:** an approval and an assignment are *writes*,
+  and the test suites are read-only by design (§3) because there is no DELETE policy on
   `submissions`, `members`, or `assignments`. Decide the throwaway-account/cleanup
   strategy once and it unblocks both.
 
