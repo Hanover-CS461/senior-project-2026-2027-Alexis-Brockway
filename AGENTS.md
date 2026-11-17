@@ -74,7 +74,9 @@ Submissions page on Sep 23, 2026 and live in the app.
   dashboard gained an **Export** tab: submissions + authors + average score, reader
   scores and notes, and the staff list (Chief Editor only), all as CSV read through
   the signed-in session. A Reader now lands on `/reader` after signing in instead of
-  hitting the editor wall (§7).
+  hitting the editor wall (§7). **Nov 17:** the demo box became a build-time switch —
+  `VITE_DEMO_MODE` must be `"true"` or `"false"` for any production build or the build
+  fails, and `false` drops the credentials from the bundle entirely (§7, §8 #7).
 - **Decision workflow** — built Nov 10, **live Nov 10**. Six statuses in five stages:
   `Received → In review → Shortlist → { Accepted | Hold | Rejected }`. The workflow
   dropdown is separate from the decision buttons on purpose; a decision is stamped with
@@ -207,6 +209,7 @@ All app commands run from `app/`:
 |---|---|---|
 | `brainstorm.md`, `features.md`, `proposal.md`, `proposal-simple.md` | Historical | Original idea/proposal material (old stack; kept, not authoritative) |
 | `AGENTS.md` | **Current** | This file |
+| `STATUS.md` | **Current** | One-page human summary: what is live, what was verified on Nov 17, what is uncommitted, what is left, and the decisions waiting on the user |
 | `docs/` | **Live site** | Jekyll site deployed to GitHub Pages. `index.md` links the live app at `/app/` — it did not until Nov 17, so the app was reachable only by someone who already knew the subpath |
 | `docs/proposal.md` | Current | Proposal as rendered on the site |
 | `docs/tutorial/` | Live | 7-page Jekyll tutorial "Build a Blind-Review Submission Form with Supabase" |
@@ -217,7 +220,7 @@ All app commands run from `app/`:
 | `tutorial-study-guide.md` | Gitignored | Private class cheat sheet — never stage/push |
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
-| `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped) |
+| `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped), `DemoAccessBox.tsx` (the only module holding the published demo logins) |
 | `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `scrub.ts` (metadata stripping + `storageNameFor`) |
 | `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
@@ -413,6 +416,17 @@ publishes demo accounts.
   **they are the same two accounts `app/.env.test` signs in as**, so `.env.test` being
   gitignored no longer hides anything — and a visitor who changes a demo role breaks
   `npm run test:e2e` locally. Worth a line in any handoff talk.
+- **A published credential has to be absent from the bundle, not hidden in the UI.**
+  Nov 17: `LoginPage` no longer imports `demoAccounts.ts`; the credentials live in one
+  leaf component (`components/DemoAccessBox.tsx`) rendered behind
+  `DEMO_ACCESS_ENABLED` (`lib/demoMode.ts`), so a build with `VITE_DEMO_MODE=false`
+  drops both and greps **0** in `dist/assets/*.js`. `vite.config.ts` throws if the flag
+  is neither `"true"` nor `"false"`, so "nobody remembered" cannot ship silently either
+  way; `.env.production` says `true` for the graded demo. The dev server defaults on, and
+  `playwright.config.ts` mirrors it into `E2E_DEMO_ACCESS` so the demo-box spec skips
+  (rather than failing) against a no-demo build. What this does **not** do is delete the
+  accounts: the passwords are in git history, so #7 phase 2 is deletion before a real
+  reading period.
 - **Anything that routes on the role must wait for the member row.** `member` is null
   both *before* the lookup finishes and for a session that has no `members` row, so a
   page that reads `member?.role` during that gap sees a reader. `AuthProvider` now
@@ -591,7 +605,8 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   passwords are in git history, so the accounts must be deleted — and that
   `e2e/editor-gating.spec.ts` asserts the demo box works, so it must become
   flag-conditional. **This one is a gate, not a date: no published credential may exist
-  when the first real manuscript arrives.**
+  when the first real manuscript arrives.** *Phase 1 shipped Nov 17 (`5107b20`):* the
+  switch exists, the spec is conditional, and a `false` build greps 0 — see §7.
 - **#8 — Send real email.** Phase 0 is Resend as Supabase Auth's SMTP (the
   `[auth.email.smtp]` block already sitting commented-out in `config.toml`), which turns
   password recovery from "works in a demo" into "works" with no app code — blocked on
