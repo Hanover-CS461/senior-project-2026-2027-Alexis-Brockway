@@ -558,6 +558,31 @@ publishes demo accounts.
 
 Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
+### Open now (filed Nov 17) — both after the deadline, both about what a reader may see
+
+- **#5 — Require an editor to approve a reader before the queue opens.** Today
+  `members.active` defaults to `true`, so anyone who signs up is an approved reader
+  within seconds and can read every submission and open every manuscript. Author
+  identity is still safe (readers have no policy on `authors`), but the *work* is
+  visible to strangers. The cheap fix is the flag that already exists: `active` already
+  gates `submissions` and `storage.objects` through `is_active_member()`, so the gate
+  belongs in the join policy (`role = 'reader' and active = false`), with the bootstrap
+  branch kept active or the project becomes un-bootstrappable. Open decision recorded
+  in the issue: only the chief can read `members`, so "any editor approves" means
+  widening that policy and handing every editor the staff list.
+- **#6 — Let editors assign submissions to readers for a reading week.** A flat queue
+  means one story gets read ten times and another by nobody. Proposes an `assignments`
+  table keyed by `week_of`, reader-scoped RLS, an *Assigned to you* section on the
+  reader queue, and a recusal surfacing to the editor as "needs reassignment". Records
+  the fork: proactive-only assignments vs strict ones enforced in RLS (strict is more
+  in keeping with the project, but hides unassigned stories from everyone) and the
+  obstacle that an assignment UI needs a narrow `list_readers()` function, because
+  editors cannot read `members`.
+- **Shared blocker, written into both:** an approval and an assignment are *writes*, and
+  the test suites are read-only by design (§3) because there is no DELETE policy on
+  `submissions`, `members`, or `assignments`. Decide the throwaway-account/cleanup
+  strategy once and it unblocks both.
+
 ### ✅ RESOLVED (Nov 12, evening) — the auth URLs now point at the live app
 
 Password recovery is built, deployed, and **routable**. Both dashboard values are now
