@@ -576,7 +576,8 @@ publishes demo accounts.
   rows and three ratings. The seventh is a real manuscript posted through the public form
   on Nov 17 by a Hanover student address; two seed statuses have drifted
   (*The Last Ferry* `Rejected`, *Porcelain* `Received`, where the seed says `In review`
-  and `Shortlist`); one non-demo personal address holds `chief_editor`; and a student
+  and `Shortlist`); one non-demo personal address holds `chief_editor` — that is the
+  owner's own second account, confirmed Nov 17, so it is not a stranger; and a student
   sign-up is already an active `reader`, which is #5 happening live. **Do not treat a
   non-seed submission as junk** — a real writer's manuscript looks exactly like junk from
   the outside, which is why `demo-reset.sql`'s delete block is commented out. Probe the
