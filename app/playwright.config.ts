@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
+import { loadEnv } from 'vite'
 
 for (const file of ['.env.test', '.env.test.local']) {
   if (existsSync(file)) process.loadEnvFile(file)
@@ -14,6 +15,12 @@ const testProjectKey = process.env.TEST_SUPABASE_ANON_KEY
 const webServerEnv: Record<string, string> = {}
 if (testProjectUrl) webServerEnv.VITE_SUPABASE_URL = testProjectUrl
 if (testProjectKey) webServerEnv.VITE_SUPABASE_ANON_KEY = testProjectKey
+
+// Mirror src/lib/demoMode.ts for the specs: the demo box is on in dev unless
+// `.env` says otherwise, and one spec asserts it exists. Read the same files the
+// dev server will read, so the answer cannot drift from what the page shows.
+const devEnv = loadEnv('development', process.cwd(), '')
+process.env.E2E_DEMO_ACCESS = devEnv.VITE_DEMO_MODE === 'false' ? 'off' : 'on'
 
 export default defineConfig({
   testDir: './e2e',

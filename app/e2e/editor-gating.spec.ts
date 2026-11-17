@@ -15,6 +15,16 @@ test('signed-out visitors are redirected from an editor submission', async ({
   await expect(page).toHaveURL(/\/login$/)
 })
 
+// The demo box is a build-time switch (src/lib/demoMode.ts). It is on in dev by
+// default and must be off for a build serving real manuscripts, where the
+// credentials do not reach the bundle at all — so this spec skips rather than
+// demanding a login that is deliberately absent. playwright.config.ts sets
+// E2E_DEMO_ACCESS from the same env the dev server reads.
+test.skip(
+  process.env.E2E_DEMO_ACCESS === 'off',
+  'demo access is disabled in this build (VITE_DEMO_MODE=false)',
+)
+
 test('the sign-in page hands a visitor a working demo account', async ({
   page,
 }) => {

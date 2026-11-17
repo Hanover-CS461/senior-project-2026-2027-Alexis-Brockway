@@ -4,8 +4,9 @@ import { Link, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { landingFor } from '../lib/roles'
-import { DEMO_ACCOUNTS, type DemoAccount } from '../lib/demoAccounts'
+import { DEMO_ACCESS_ENABLED } from '../lib/demoMode'
 import PasswordField from '../components/PasswordField'
+import DemoAccessBox from '../components/DemoAccessBox'
 
 type Mode = 'signin' | 'signup'
 
@@ -56,13 +57,16 @@ function LoginPage() {
     if (error) setError(error.message)
   }
 
-  const signInAs = async (account: DemoAccount) => {
+  // One-click sign-in for the published demo accounts. This page never sees the
+  // credentials: DemoAccessBox owns them, and it disappears from a live build
+  // (see lib/demoMode.ts).
+  const signInAs = async (accountEmail: string, accountPassword: string) => {
     setError(null)
     setMessage(null)
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({
-      email: account.email,
-      password: account.password,
+      email: accountEmail,
+      password: accountPassword,
     })
     setLoading(false)
     if (error) setError(error.message)
@@ -140,36 +144,8 @@ function LoginPage() {
         </p>
       )}
 
-      {mode === 'signin' && (
-        <div className="demo-box">
-          <h2>Demo access</h2>
-          <p className="hint">
-            Throwaway accounts on sample data — every submission, author and
-            manuscript in it is fictional. Sign in as either one to look around.
-          </p>
-          <ul className="demo-list">
-            {DEMO_ACCOUNTS.map((account) => (
-              <li key={account.email} className="demo-account">
-                <span className="demo-detail">
-                  <strong>{account.label}</strong>
-                  <span className="demo-blurb">{account.blurb}</span>
-                  <code className="demo-credentials">
-                    {account.email} · {account.password}
-                  </code>
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-small"
-                  aria-label={`Sign in as ${account.label}`}
-                  disabled={loading}
-                  onClick={() => signInAs(account)}
-                >
-                  Use this account
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {mode === 'signin' && DEMO_ACCESS_ENABLED && (
+        <DemoAccessBox onPick={signInAs} disabled={loading} />
       )}
 
       <p className="back-link">
