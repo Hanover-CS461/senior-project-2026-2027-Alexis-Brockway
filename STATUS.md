@@ -108,7 +108,8 @@ Verified Nov 17 after the refactor, not assumed:
   in `dist/assets/*.js`.
 - `VITE_DEMO_MODE= npm run build` → fails loudly with the intended message.
 - The default build (`.env.production` → `true`) still contains both addresses, so
-  the graded demo is intact.
+  the graded demo is intact — confirmed against the **live** bundle after the Pages
+  deploy of `a608762` went green.
 
 Phase 2 of #7 is still the gate: before a real reading period the two accounts
 must be **deleted** (not just switched off), because the passwords are in git
