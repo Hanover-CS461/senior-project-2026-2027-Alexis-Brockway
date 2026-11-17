@@ -66,9 +66,11 @@ editor and it goes back to how it looked on day one.
 
 - **Decision letters.** The six statuses work and are enforced by the database,
   but nothing emails an author. That needs Resend wired into an Edge Function.
-- **Invite codes.** Sign-up is open: anyone who finds the page can join as a
-  Reader. A Reader still cannot see author names — that boundary is enforced by
-  the database, not the page.
+- **Invite codes.** Sign-up is open: anyone who finds the page can create an
+  account. An account now starts **inactive**, so it can read nothing until the
+  Chief Editor activates it from the Staff tab — that is the approval step, and
+  it lives in the database, not the page. Invite codes would replace "sign up,
+  then wait" with "join with a code", which is friendlier but not safer.
 - **Real email delivery.** Password reset links point at the right place, but
   they ride Supabase's built-in demo mailer, which is rate-limited and often
   lands in spam. Production mail belongs on Resend.
