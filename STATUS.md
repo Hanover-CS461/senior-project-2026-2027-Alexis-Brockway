@@ -84,6 +84,11 @@ seeded pieces; it deliberately leaves the seventh alone.
 
 ## Shipped today (committed and deployed)
 
+- **`74c4fa0`** — `demo-reset.sql` now re-seeds one rating instead of leaving the
+  demo with none, plus `deploy-pages@v5` (green), the Node-22 documentation fix, a
+  teaching-vs-real callout in tutorial part 4, and the live-state probe written down
+  in `AGENTS.md` §7. One "Node.js 20 is deprecated" warning line remains, from four
+  actions' own runtimes; left deliberately (§3).
 - **`5107b20`** — made demo access a **build-time** decision (`VITE_DEMO_MODE`), so
   the published logins cannot reach a live build by accident. Details below.
 

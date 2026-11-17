@@ -115,9 +115,14 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Node is v22.22.1** and is on the default PATH (`/usr/bin/node`); `~/node/bin`
   also has a copy. If a fresh terminal says "node not found":
   `export PATH="$HOME/node/bin:$PATH"`. The Pages workflow pins
-  `node-version: 22` to match. Any remaining "Node.js 20 is deprecated" line in a
-  deploy log comes from an **action's own runtime** (`actions/deploy-pages`), not
-  from that pin — bump the action, not the pin.
+  `node-version: 22` to match, so a "Node.js 20 is deprecated" line in a deploy log is
+  never about that pin — it is about an **action's own runtime**, and bumping the action
+  is the only fix. State as of Nov 17: `deploy-pages` is on v5 and no longer appears in
+  the warning; `checkout@v4`, `configure-pages@v5`, `setup-node@v4` and
+  `upload-artifact@v4` (pulled in by `upload-pages-artifact@v3`) still name themselves,
+  and all of them run green on Node 24. Leave them until after the deadline:
+  `upload-pages-artifact` v4+ changes **which files are archived** (dotfiles excluded by
+  default), which is not a change to make the week a demo is graded.
 - Repo root: `/mnt/c/Users/A3bro/senior-project-2026-2027-Alexis-Brockway`
   (Windows drive via WSL).
 
