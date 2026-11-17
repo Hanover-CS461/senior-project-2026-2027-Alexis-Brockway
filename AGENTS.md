@@ -114,8 +114,10 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 - **Node is v22.22.1** and is on the default PATH (`/usr/bin/node`); `~/node/bin`
   also has a copy. If a fresh terminal says "node not found":
-  `export PATH="$HOME/node/bin:$PATH"`. (The Pages workflow still pins
-  `node-version: 20` — align it or leave it deliberately.)
+  `export PATH="$HOME/node/bin:$PATH"`. The Pages workflow pins
+  `node-version: 22` to match. Any remaining "Node.js 20 is deprecated" line in a
+  deploy log comes from an **action's own runtime** (`actions/deploy-pages`), not
+  from that pin — bump the action, not the pin.
 - Repo root: `/mnt/c/Users/A3bro/senior-project-2026-2027-Alexis-Brockway`
   (Windows drive via WSL).
 
@@ -234,7 +236,7 @@ All app commands run from `app/`:
 | `app/.env.production` | Current | Committed project URL + publishable key, so the Pages build needs no secrets |
 | `app/README.md` | Current | Real project docs (live URLs, RLS matrix, commands, known gaps) — replaced the Vite boilerplate Oct 29 |
 | `app/supabase/seed.sql` | **Current** | Six sample submissions + authors (`on conflict do nothing`), applied to the live project Oct 29; matching sample manuscripts live under the `manuscripts/samples/` storage prefix |
-| `app/supabase/demo-reset.sql` | **Current** | Paste-to-undo for a public demo (Nov 17): restores the six seed statuses, clears sample ratings, puts the two demo logins back in their roles. Only the optional block at the end can destroy rows, and it is commented out |
+| `app/supabase/demo-reset.sql` | **Current** | Paste-to-undo for a public demo: restores the six seed statuses, clears sample ratings, **re-seeds one rating from the demo Reader** (so the queue keeps a Scored section and editors keep an average), and puts the two demo logins back in their roles. Only the optional block at the end can destroy rows, and it is commented out |
 | `app/supabase/functions/` | **Planned** (§13 wk 5) | Edge Functions — metadata stripping (issue #3), decision-letter email |
 | `docs/404.html` | Current | GitHub Pages fallback: bounces `/app/*` deep links back into the SPA, leaves real 404s alone |
 | `netlify.toml` / `vercel.json` | Not needed | Hosting is GitHub Pages (§5); no static-host config required |
@@ -563,6 +565,18 @@ publishes demo accounts.
 - **One orphan auth user:** `kennings.reader@gmail.com` was created while testing which
   domains Supabase's sign-up accepts. It has **no** `members` row, so it is invisible
   in the Staff tab and harmless, but deleting it needs a service-role key.
+- **The live project is no longer demo-only, and the docs assumed it was.** A read-only
+  probe on Nov 17 (sign in as the published demo Chief with the publishable key, then
+  `GET /rest/v1/submissions` and `/members`) found **seven** submissions, **six** member
+  rows and three ratings. The seventh is a real manuscript posted through the public form
+  on Nov 17 by a Hanover student address; two seed statuses have drifted
+  (*The Last Ferry* `Rejected`, *Porcelain* `Received`, where the seed says `In review`
+  and `Shortlist`); one non-demo personal address holds `chief_editor`; and a student
+  sign-up is already an active `reader`, which is #5 happening live. **Do not treat a
+  non-seed submission as junk** — a real writer's manuscript looks exactly like junk from
+  the outside, which is why `demo-reset.sql`'s delete block is commented out. Probe the
+  rows before writing any statement that names a table you did not seed, and keep personal
+  addresses out of `STATUS.md`/`AGENTS.md` — this repo is public.
 - **OWASP Top 10** is the security checklist; **broken access control** is the
   project's primary risk (the whole product is a permission boundary).
 

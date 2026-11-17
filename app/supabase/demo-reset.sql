@@ -10,6 +10,9 @@
 --
 -- This file is the undo. It touches ONLY the six seeded submissions and the
 -- two demo accounts; it never deletes anything a real submission might need.
+-- It deliberately does NOT delete extra submissions — if a stranger left one
+-- behind, that block is at the bottom, commented out, because a real writer's
+-- manuscript looks exactly like junk from here.
 --
 -- Paste it into the dashboard SQL editor (the CLI is not linked — see
 -- AGENTS.md §7) whenever the demo has drifted, or before a walkthrough.
@@ -41,6 +44,34 @@ where submission_id in (
   'a5555555-5555-4555-8555-555555555555',
   'a6666666-6666-4666-8666-666666666666'
 );
+
+-- 2b. Put ONE rating back, from the demo Reader on one seeded piece.
+--
+-- Without this the reset erases the only rating in the project: the reader
+-- queue loses its "Scored" section, and every editor detail page says "no
+-- ratings yet" — so the feature a visitor came to see looks broken rather than
+-- clean. It is seeded on the Reader (not the Chief) because the reader's own
+-- queue is where a score is visible as a score, and because the note then shows
+-- up in the editor's ratings summary too.
+--
+-- Keyed on (submission_id, reader_id), so pasting this file twice is harmless.
+-- The `where exists` guard makes it a no-op instead of a foreign-key error if
+-- the demo accounts are ever deleted (issue #7 phase 2).
+insert into public.ratings (submission_id, reader_id, score, notes, recused)
+select
+  'a2222222-2222-4222-8222-222222222222'::uuid,
+  u.id,
+  2,
+  'The dishwasher as a stand-in for the speaker''s mother is doing a lot of '
+    || 'work here, and I want the last stanza to trust it more than it does.',
+  false
+from auth.users u
+where u.email = 'kennings.reader@example.com'
+on conflict (submission_id, reader_id) do update
+  set score = excluded.score,
+      notes = excluded.notes,
+      recused = excluded.recused,
+      updated_at = now();
 
 -- 3. The two demo accounts back to the roles the sign-in page promises.
 --    A visitor who demotes the demo chief leaves the browser tests broken
@@ -84,3 +115,9 @@ order by title;
 select email, role, active
 from public.members
 order by email;
+
+select coalesce(s.title, r.submission_id::text) as piece,
+       r.score, r.recused, left(r.notes, 46) as note
+from public.ratings r
+left join public.submissions s on s.id = r.submission_id
+order by piece;

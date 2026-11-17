@@ -10,6 +10,14 @@ By the end of this part, people can create accounts and sign in. The **first
 person to sign up becomes Chief Editor**, and everyone after joins as a Reader
 — and no code running in a browser can change that outcome.
 
+> **This is a teaching-sized version of the real app.** Kennings' app keeps every
+> rule below, but spells a few things differently, so don't be surprised when the
+> real schema doesn't match this page character for character: roles are
+> **snake_case** (`reader`, `staff_editor`, `editor`, `co_editor`,
+> `chief_editor`, `advisor`) instead of `'Reader'` / `'Chief Editor'`, and
+> `members` carries a `name` column so the staff screen can show a person rather
+> than an email address. Same policy, same bootstrap, different spellings.
+
 ## The design problem
 
 A staff panel needs accounts. But if the app is just a frontend, any "role"

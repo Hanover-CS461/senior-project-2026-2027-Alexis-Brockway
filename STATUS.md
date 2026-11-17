@@ -56,6 +56,32 @@ file boundary holds.
 
 ---
 
+## What the live project actually holds (probed Nov 17, read-only)
+
+Signing in as the published demo Chief and reading the rows turns up more than
+the seed file describes, and none of it is what a visitor should see:
+
+- **Seven submissions, not six.** One arrived **Nov 17 through the public form**
+  from a Hanover student address, and it currently reads `Accepted`. It is not
+  sample data and must not be deleted casually — a real writer's manuscript looks
+  exactly like junk from the outside.
+- **Two seed statuses have drifted**: *The Last Ferry* is `Rejected` and
+  *Porcelain* is `Received`, where the seed says `In review` and `Shortlist`.
+- **Six member rows**: the two demo accounts, plus personal addresses — one of
+  which holds **`chief_editor`**. That account can read `authors`. If it isn't
+  yours, it should not hold that role.
+- **A student signed up and is an active `reader` today**, so unpublished work is
+  already visible to someone outside the club. That is issue #5, live.
+- Three ratings, one of them carrying the notes `hello notes`.
+
+RLS still holds — a reader sees no author identity — so this is not a blind-review
+breach. It is the demo looking messy, plus the two risks #5 and #7 describe
+happening in miniature. `app/supabase/demo-reset.sql` is the undo for the six
+seeded pieces; it deliberately leaves the seventh alone.
+
+---
+
+
 ## Shipped today (committed and deployed)
 
 - **`5107b20`** — made demo access a **build-time** decision (`VITE_DEMO_MODE`), so
@@ -119,17 +145,26 @@ history.
 
 ## What is left
 
-### Needs your hands (three small things, no code)
+### Needs your hands (five small things, no code)
 
-1. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
+1. **Paste `app/supabase/demo-reset.sql`** into the dashboard SQL editor — the CLI
+   still isn't linked, so this is the one step I can't run. It restores the six
+   seed statuses, clears the junk ratings, puts one sensible rating back, and
+   re-asserts both demo roles. Its own trailing `SELECT`s are the receipt.
+2. **Confirm who holds `chief_editor` on a personal address.** That account can read
+   every author's name and email. If it is a second account of yours, fine — leave
+   it. If not, demote it in the Staff tab.
+3. **Decide what happens to the seventh submission** (the Nov 17 one from a Hanover
+   student, now `Accepted`). It is not sample data, so I won't touch it.
+4. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
    `probe.txt`, and `manuscripts/samples` → `probe-test.txt`. The app cannot: anon
    has an insert policy on Storage and no delete policy. Inert, but visible to
    anyone browsing the bucket.
-2. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
+5. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
    then walk `/forgot-password`. Routing is proven; **delivery is not**. If it
    lands, a caveat comes out of the README. If it doesn't, that is the real
    blocker found with a week to spare.
-3. **Open the app on a phone, on cellular** — every check so far ran from one
+6. **Open the app on a phone, on cellular** — every check so far ran from one
    machine. Thirty seconds, and it is the only honest proof of "public".
 
 ### Open issues, in the order I would defend
