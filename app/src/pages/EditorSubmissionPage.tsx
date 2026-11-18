@@ -68,6 +68,13 @@ function EditorSubmissionPage() {
   const [pickStaff, setPickStaff] = useState('')
   const [readingBusy, setReadingBusy] = useState(false)
   const [readingError, setReadingError] = useState<string | null>(null)
+  /**
+   * Assignments and the reader list are two separate queries, so for a moment
+   * the panel knows WHO holds the piece but not their name — and renders "Unknown
+   * reader", which reads like a broken row. One flag removes that flash: the row
+   * is a real name or it is not drawn yet.
+   */
+  const [readingLoaded, setReadingLoaded] = useState(false)
 
   const loadReading = useCallback(async () => {
     if (!submissionId) return
@@ -82,6 +89,9 @@ function EditorSubmissionPage() {
       .select('user_id, name, staffs')
       .eq('active', true)
     setReaders(staff ?? [])
+    // Never reset to false: a reload after assigning should swap the list, not
+    // blank the panel.
+    setReadingLoaded(true)
   }, [submissionId])
 
   useEffect(() => {
@@ -336,7 +346,9 @@ function EditorSubmissionPage() {
 
           {readingError && <p className="error">{readingError}</p>}
 
-          {assignees.length === 0 ? (
+          {!readingLoaded ? (
+            <p className="empty">Loading readers…</p>
+          ) : assignees.length === 0 ? (
             <p className="empty">Nobody assigned yet.</p>
           ) : (
             <ul className="assignee-list">
