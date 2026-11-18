@@ -97,6 +97,34 @@ test.describe('authenticated roles', () => {
     }
   })
 
+  test('the chief editor sees which genre staff each member is on', async ({
+    page,
+  }) => {
+    await signIn(
+      page,
+      process.env.TEST_CHIEF_EMAIL!,
+      process.env.TEST_CHIEF_PASSWORD!,
+    )
+    await expect(
+      page.getByRole('heading', { name: 'Editor dashboard' }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Staff' }).click()
+    await expect(page.getByRole('heading', { name: 'Staff' })).toBeVisible()
+
+    // Read-only: the chips are the assignment control, and below the table the
+    // same data is summarised as "who is on each staff". Both read `staffs`
+    // from the members row, so this fails loudly if the migration adding that
+    // column has not been applied.
+    await expect(
+      page.getByRole('heading', { name: "Who's on each staff" }),
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Fiction' }).first()).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Photography & Visual Art' }).first(),
+    ).toBeVisible()
+  })
+
   test('the chief editor can export the submissions as CSV', async ({
     page,
   }) => {

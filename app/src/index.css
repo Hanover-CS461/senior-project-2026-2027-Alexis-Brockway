@@ -454,6 +454,68 @@ p {
   opacity: 0.55;
 }
 
+/* Genre staffs: four toggle chips per member, then a summary of each team. */
+.staff-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 260px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.chip-on {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: #fff;
+}
+
+.chip-on:hover:not(:disabled) {
+  color: #fff;
+}
+
+.staff-cell-note {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.staff-summary {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.staff-summary li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.staff-summary-label {
+  display: inline-block;
+  min-width: 190px;
+  font-weight: 600;
+}
+
 .members h3 {
   margin: 28px 0 4px;
 }

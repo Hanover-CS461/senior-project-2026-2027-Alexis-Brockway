@@ -35,6 +35,16 @@ Submissions page on Sep 23, 2026 and live in the app.
   submission, a real student reader, personal accounts (§7). (5) Housekeeping:
   `deploy-pages@v5`, a corrected Node note in §3, and a teaching-vs-real callout in the
   tutorial.
+- **Genre staffs — built Nov 17, after the five above.** Each `members` row now
+  carries `staffs text[]` (`20261118000000_member_staffs.sql`): zero or more of the
+  four genre slugs, with a check constraint that refuses anything else. The Staff tab
+  gained four toggle chips per person and a "Who's on each staff" summary, the staff
+  CSV export gained a Staffs column, and `staff_change` joined `role_change` in the
+  audit trail. **Labels only** — a team says who reads what and never changes what a
+  reader can open (§9 #21). Empty `{}` means general staff, so every existing row
+  behaved identically the moment it was applied. Pasted and proved from outside the
+  same day: the anon probe answered `200` on `select=staffs`, `npm test` **90/90**,
+  `npm run test:e2e` **18/18**.
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
   Jekyll site). Backend is **Supabase**, live in project `qsynlsbltpnhzncpqerz`
@@ -68,8 +78,8 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 17)**: `npm test` **71/71** and
-  `npm run test:e2e` **17/17**, with no skips. `app/.env.test` (gitignored) holds two
+- **Tests** — **green across the board (Nov 17)**: `npm test` **90/90** and
+  `npm run test:e2e` **18/18**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
   test credentials are committed; a fresh clone gets 7 clean skips by design. Note:
@@ -241,8 +251,8 @@ All app commands run from `app/`:
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped), `DemoAccessBox.tsx` (the only module holding the published demo logins) |
-| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor` + `isPendingApproval`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `demoMode.ts` (the `VITE_DEMO_MODE` build-time rule), `scrub.ts` (metadata stripping + `storageNameFor`) |
-| `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
+| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor` + `isPendingApproval`), `staffs.ts` (pure genre-team helpers: `toggleStaff`, `staffNamesFor`, `groupByStaff`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `demoMode.ts` (the `VITE_DEMO_MODE` build-time rule), `scrub.ts` (metadata stripping + `storageNameFor`) |
+| `app/src/lib/*.test.ts` | Current | `roles`, `staffs`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
 | `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles, `password-recovery` (request form, expired link, rejected link), `metadata-scrub` (a real JPEG through a real canvas) |
@@ -304,8 +314,11 @@ Reader cannot read identity even by calling the database directly.
 - `authors` — `id, submission_id (unique FK), name, email, mailing_address, bio,
   created_at`. Readers have **no** policy → blind.
 - `members` — `id, user_id (FK auth.users, unique), email, name, role, active,
-  created_at`. Roles are **snake_case**: `reader`, `staff_editor`, `editor`,
-  `co_editor`, `chief_editor`, `advisor`.
+  staffs, created_at`. Roles are **snake_case**: `reader`, `staff_editor`, `editor`,
+  `co_editor`, `chief_editor`, `advisor`. `staffs` is a `text[]` of genre slugs
+  (`fiction`, `poetry`, `creative-nonfiction`, `visual-arts`), constrained by
+  `members_staffs_known`; `{}` means general staff. It labels people and never gates
+  work — nothing filters a queue on it (§9 #21).
 - `member_audit` — `actor_id, target_user_id, action, old_value, new_value,
   created_at`; written by a trigger on `members` update.
 
@@ -522,6 +535,18 @@ publishes demo accounts.
   updates only `status` to `Accepted`/`Hold`/`Rejected` now fails with a check
   violation — intended, and it surfaces bugs loudly instead of storing an inconsistent
   row.
+- **Genre staffs are labels, not a gate.** `members.staffs` is readable with the
+  member row, which is what makes it cheap: a reader knows their own teams with no
+  extra query and no new policy, and nothing in the queue filters on it. Three traps.
+  (1) A fifth genre means updating `MEMBER_STAFF_SLUGS` **and** the
+  `members_staffs_known` check constraint — `staffs.test.ts` asserts both against
+  `genres.ts` so the drift fails a test instead of silently becoming an unassignable
+  staff. (2) `auth.tsx` now selects `staffs`, so deploying the app before the column
+  exists makes every sign-in look like a reader: `42703` is swallowed by the failed
+  member lookup, `joinClub` returns null, and the chief lands on `/reader`. Paste
+  first, push second — the same rule as `decided_at`. (3) Assigning *yourself* to a
+  team is allowed (the chief reads too); only the role select and the Activate button
+  are disabled on your own row, because those are the two ways to lock yourself out.
 - **A password-reset link must land on the app root, never on `/reset-password`.**
   On Pages a deep link is answered by `404.html`, which stashes the path and bounces to
   `/app/`, and `main.tsx` restores it with `history.replaceState`. But the Supabase client
@@ -840,6 +865,15 @@ real inbox, then move auth mail to Resend.
     editor page saying "no ratings yet" — a clean demo that looked broken. It now
     re-seeds one rating from the demo Reader. Same lesson as #18: the visible state is
     part of the artifact.
+21. **A staff team is a label, not a permission** (Nov 17). Staffs live in one
+    `text[]` on `members` rather than a join table, because there are four of them,
+    the list already exists in `genres.ts`, and the existing `members` policies
+    (chief reads all, chief updates, a member reads their own row) are exactly the
+    rules the feature needs — so the change added a column and zero policies. Teams
+    deliberately do **not** filter the queue: hiding work from a reader is issue #6's
+    assignment model, which needs its own decision about unassigned stories. The
+    empty array means "general staff" so nothing had to be backfilled, and a check
+    constraint keeps the column to real genre slugs.
 
 ---
 
@@ -1114,6 +1148,10 @@ too — the built-in mailer is a demo, §7), join-with-a-code, real club pilot.
   the same day a real student signed up and became an active reader, which is the
   clearest argument for it being first among the reader-side issues.
 - ~~**The demo reset erased the demo**~~ — fixed and run; verified from outside (§2, #20).
+- ~~**Genre staffs**~~ — built Nov 17: `members.staffs` + chips + summary + export +
+  audit (§2, §9 #21). Labels only; assignment stays issue #6. **Still to do by hand:**
+  re-run `demo-reset.sql` so the demo Reader is back on Fiction + Poetry and the
+  summary has something in it.
 - **Still open this week:** the two SQL pastes only the user can do (demo reset done;
   the reader-approval check is a `pg_policies` query), the two stray Storage objects, one
   real inbox to prove auth mail *delivers*, and a phone on cellular.

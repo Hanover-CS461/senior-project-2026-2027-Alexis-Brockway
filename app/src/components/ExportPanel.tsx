@@ -118,7 +118,7 @@ function ExportPanel() {
       async () => {
         const { data, error } = await supabase
           .from('members')
-          .select('name, email, role, active, created_at')
+          .select('name, email, role, staffs, active, created_at')
           .order('created_at', { ascending: true })
 
         if (error) throw new Error(error.message)

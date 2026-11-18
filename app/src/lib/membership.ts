@@ -15,6 +15,12 @@ export interface MemberRow {
    * must treat `undefined` as "not approved" — see `isPendingApproval()`.
    */
   active?: boolean
+  /**
+   * Genre staffs, from `members.staffs` (`20261118000000`). `[]` or missing
+   * means general staff. Labels only — this never gates what a reader may read,
+   * so an older query that omits the column is harmless.
+   */
+  staffs?: string[]
 }
 
 export interface JoinUser {

@@ -10,6 +10,7 @@
 // but the database is the boundary.
 
 import { toCsv } from './csv'
+import { staffNamesFor } from './staffs'
 
 export interface ExportSubmission {
   id: string
@@ -40,6 +41,8 @@ export interface ExportMember {
   name: string
   email: string
   role: string
+  /** Genre staffs; empty or missing means general staff. */
+  staffs?: string[]
   active: boolean
   created_at: string
 }
@@ -82,6 +85,7 @@ export const MEMBER_HEADERS = [
   'Name',
   'Email',
   'Role',
+  'Staffs',
   'Active',
   'Joined',
 ] as const
@@ -171,6 +175,8 @@ export function membersCsv(members: readonly ExportMember[]): string {
     m.name,
     m.email,
     m.role,
+    // Labels, not slugs: this file is opened by a person.
+    staffNamesFor(m.staffs),
     m.active ? 'yes' : 'no',
     m.created_at,
   ])

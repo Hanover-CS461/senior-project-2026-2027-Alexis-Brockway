@@ -128,18 +128,34 @@ describe('ratingsCsv', () => {
 })
 
 describe('membersCsv', () => {
-  it('exports staff with role and active flag', () => {
+  it('exports staff with role, staffs and active flag', () => {
     const csv = membersCsv([
       {
         name: 'Test Reader',
         email: 'kennings.reader@example.com',
         role: 'reader',
+        staffs: ['fiction', 'poetry'],
         active: true,
         created_at: '2026-10-29T09:00:00Z',
       },
     ])
 
-    expect(csv.split('\r\n')[0]).toBe('Name,Email,Role,Active,Joined')
-    expect(csv).toContain('kennings.reader@example.com,reader,yes')
+    expect(csv.split('\r\n')[0]).toBe('Name,Email,Role,Staffs,Active,Joined')
+    expect(csv).toContain('kennings.reader@example.com,reader,"Fiction, Poetry",yes')
+  })
+
+  it('leaves the staffs cell empty for general staff', () => {
+    const csv = membersCsv([
+      {
+        name: 'No Team',
+        email: 'nobody@example.com',
+        role: 'editor',
+        staffs: [],
+        active: true,
+        created_at: '2026-10-29T09:00:00Z',
+      },
+    ])
+
+    expect(csv).toContain('nobody@example.com,editor,,yes')
   })
 })

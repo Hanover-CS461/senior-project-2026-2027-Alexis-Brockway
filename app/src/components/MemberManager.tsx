@@ -3,7 +3,15 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { canManageMembers } from '../lib/roles'
 import {
+  groupByStaff,
+  hasStaff,
+  staffNamesFromCsv,
+  staffNamesFor,
+  toggleStaff,
+} from '../lib/staffs'
+import {
   MEMBER_ROLES,
+  MEMBER_STAFFS,
   roleLabel,
   type Member,
   type MemberAuditEntry,
@@ -18,6 +26,12 @@ function describeAudit(entry: MemberAuditEntry, nameOf: (id: string | null) => s
   }
   if (entry.action === 'deactivate') return `${actor} deactivated ${target}`
   if (entry.action === 'reactivate') return `${actor} reactivated ${target}`
+  if (entry.action === 'staff_change') {
+    const staffs = staffNamesFromCsv(entry.new_value)
+    return staffs
+      ? `${actor} put ${target} on ${staffs}`
+      : `${actor} took ${target} off every staff`
+  }
   return `${actor} updated ${target}`
 }
 
@@ -37,7 +51,7 @@ function MemberManager() {
 
     const { data, error } = await supabase
       .from('members')
-      .select('id, user_id, name, email, role, active')
+      .select('id, user_id, name, email, role, staffs, active')
       .order('created_at', { ascending: true })
 
     if (error) {
@@ -46,7 +60,9 @@ function MemberManager() {
       setLoading(false)
       return
     }
-    setMembers(data ?? [])
+    setMembers(
+      (data ?? []).map((m) => ({ ...m, staffs: m.staffs ?? [] })),
+    )
 
     const { data: log } = await supabase
       .from('member_audit')
@@ -103,6 +119,28 @@ function MemberManager() {
     load()
   }
 
+  const changeStaff = async (target: Member, slug: string) => {
+    const next = toggleStaff(target.staffs, slug)
+    setSavingId(target.id)
+    const previous = members
+    setMembers(
+      members.map((m) => (m.id === target.id ? { ...m, staffs: next } : m)),
+    )
+    const { error } = await supabase
+      .from('members')
+      .update({ staffs: next })
+      .eq('id', target.id)
+    setSavingId(null)
+    if (error) {
+      setMembers(previous)
+      setError(error.message)
+      return
+    }
+    // Re-read rather than trusting the optimistic copy: this also refreshes the
+    // audit trail, so the `staff_change` line appears immediately.
+    load()
+  }
+
   if (!isChief) {
     return (
       <div className="members">
@@ -113,6 +151,8 @@ function MemberManager() {
       </div>
     )
   }
+
+  const staffGroups = groupByStaff(members)
 
   return (
     <div className="members">
@@ -129,62 +169,114 @@ function MemberManager() {
       {loading ? (
         <p className="empty">Loading staff…</p>
       ) : (
-        <table className="member-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => {
-              const isSelf = m.user_id === currentMember?.user_id
-              const busy = savingId === m.id
-              return (
-                <tr key={m.id} className={m.active ? '' : 'member-inactive'}>
-                  <td>
-                    {m.name || '—'}
-                    {isSelf && <span className="hint"> (you)</span>}
-                  </td>
-                  <td>{m.email}</td>
-                  <td>
-                    <select
-                      value={m.role}
-                      disabled={isSelf || busy}
-                      onChange={(e) => changeRole(m, e.target.value as MemberRole)}
-                    >
-                      {MEMBER_ROLES.map((r) => (
-                        <option key={r.value} value={r.value}>
-                          {r.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${m.active ? 'badge-in-review' : 'badge-received'}`}
-                    >
-                      {m.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn btn-small"
-                      disabled={isSelf || busy}
-                      onClick={() => toggleActive(m)}
-                    >
-                      {m.active ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <>
+          <table className="member-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Staffs</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.map((m) => {
+                const isSelf = m.user_id === currentMember?.user_id
+                const busy = savingId === m.id
+                return (
+                  <tr key={m.id} className={m.active ? '' : 'member-inactive'}>
+                    <td>
+                      {m.name || '—'}
+                      {isSelf && <span className="hint"> (you)</span>}
+                    </td>
+                    <td>{m.email}</td>
+                    <td>
+                      <select
+                        value={m.role}
+                        disabled={isSelf || busy}
+                        onChange={(e) => changeRole(m, e.target.value as MemberRole)}
+                      >
+                        {MEMBER_ROLES.map((r) => (
+                          <option key={r.value} value={r.value}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <div className="staff-chips">
+                        {MEMBER_STAFFS.map((s) => {
+                          const on = hasStaff(m.staffs, s.value)
+                          return (
+                            <button
+                              key={s.value}
+                              type="button"
+                              className={`chip ${on ? 'chip-on' : ''}`}
+                              aria-pressed={on}
+                              title={
+                                on
+                                  ? `Remove ${m.name || m.email} from ${s.label}`
+                                  : `Put ${m.name || m.email} on ${s.label}`
+                              }
+                              disabled={busy}
+                              onClick={() => changeStaff(m, s.value)}
+                            >
+                              {s.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <p className="hint staff-cell-note">
+                        {m.staffs.length === 0
+                          ? 'General staff — every genre'
+                          : staffNamesFor(m.staffs)}
+                      </p>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${m.active ? 'badge-in-review' : 'badge-received'}`}
+                      >
+                        {m.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-small"
+                        disabled={isSelf || busy}
+                        onClick={() => toggleActive(m)}
+                      >
+                        {m.active ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+
+          <h3>Who's on each staff</h3>
+          <p className="hint">
+            Staffs are labels: they say who reads what, but they do not change
+            what a reader can open. Everyone active still sees the whole queue.
+          </p>
+          <ul className="staff-summary">
+            {staffGroups.map((group) => (
+              <li key={group.slug}>
+                <span className="staff-summary-label">{group.label}</span>
+                {group.members.length === 0 ? (
+                  <span className="hint">no one assigned yet</span>
+                ) : (
+                  group.members
+                    .map((m) => `${m.name || m.email}${m.active ? '' : ' (inactive)'}`)
+                    .join(', ')
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <h3>Recent activity</h3>

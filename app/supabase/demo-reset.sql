@@ -77,12 +77,18 @@ on conflict (submission_id, reader_id) do update
 -- 3. The two demo accounts back to the roles the sign-in page promises.
 --    A visitor who demotes the demo chief leaves the browser tests broken
 --    until this runs.
+--
+--    `staffs` is reset too: the demo Reader belongs to Fiction and Poetry, so
+--    the Staff tab's "Who's on each staff" summary is not empty when a visitor
+--    opens it. A visitor can toggle chips freely; this is the undo.
 update public.members
 set role = 'chief_editor', active = true
 where email = 'kennings.chief@example.com';
 
 update public.members
-set role = 'reader', active = true
+set role = 'reader',
+    active = true,
+    staffs = array['fiction', 'poetry']
 where email = 'kennings.reader@example.com';
 
 -- 4. Optional, deliberately commented out. Uncomment only if a stranger
@@ -113,7 +119,7 @@ select title, status, decided_at
 from public.submissions
 order by title;
 
-select email, role, active
+select email, role, active, staffs
 from public.members
 order by email;
 
