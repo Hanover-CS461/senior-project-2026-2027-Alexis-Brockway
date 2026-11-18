@@ -22,7 +22,7 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Nov 17, 2026)
+## 2. Current status (Nov 18, 2026)
 
 - **Nov 17, one session, five things landed.** (1) Demo access became a
   **build-time** switch (`VITE_DEMO_MODE`) — a production build fails without it, and
@@ -130,15 +130,16 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Keep-alive** — a scheduled Action has been pinging the database since Oct 29 and
   has fired on schedule (Nov 1, Nov 4), so the free-tier project no longer pauses.
 - **Open work** — the auth-URL blocker is **closed** (§8: all three probes now land on the
-  app), the demo queue is clean, and **metadata stripping shipped Nov 12**. Nothing on the
+  app), the demo queue is clean, **metadata stripping shipped Nov 12**, and the last two
+  editor-side features (genre staffs, reading assignments) landed Nov 17–18. Nothing on the
   critical path for Nov 24 is left; what remains is either after the deadline (decision
   letters, invite codes, the club pilot) or the residual risks written down in §8 #3.
-  Issues #1–#4 (§8) are all **closed on GitHub** as of Nov 12, each with a closing note
-  recording what actually shipped and where it deviated from the original plan. §13 has
-  the plan. Two loose ends need the user's hands, not an agent's: the stray
-  `manuscripts/probe.txt` and `manuscripts/samples/probe-test.txt` objects (§7 — anon
-  cannot delete), and one real inbox to prove auth mail is *delivered*, not just routed
-  (§8).
+  Issues #1–#4 (§8) are all **closed on GitHub**; #5, #6 and #7 each have their first
+  phase shipped and their remainder recorded in the issue. §13 has the plan. Loose ends
+  that need the user's hands, not an agent's: the stray `manuscripts/probe.txt` and
+  `manuscripts/samples/probe-test.txt` objects (§7 — anon cannot delete), one real inbox
+  to prove auth mail is *delivered*, not just routed (§8), a phone on cellular, and the
+  #7 phase-2 account deletion before a real reading period.
 - **Verified end-to-end Nov 17, 2026** (read-only; nothing about the app changed):
   `npm test` **71/71**, `npm run test:e2e` **17/17**, live site and `/app/` both **200**,
   keep-alive cron green Nov 13 and Nov 16, and a browser pass over the *deployed* URL
@@ -284,7 +285,7 @@ All app commands run from `app/`:
 | `app/.env.production` | Current | Committed project URL + publishable key, so the Pages build needs no secrets |
 | `app/README.md` | Current | Real project docs (live URLs, RLS matrix, commands, known gaps) — replaced the Vite boilerplate Oct 29 |
 | `app/supabase/seed.sql` | **Current** | Six sample submissions + authors (`on conflict do nothing`), applied to the live project Oct 29; matching sample manuscripts live under the `manuscripts/samples/` storage prefix |
-| `app/supabase/demo-reset.sql` | **Current** | Paste-to-undo for a public demo: restores the six seed statuses, clears sample ratings, **re-seeds one rating from the demo Reader** (so the queue keeps a Scored section and editors keep an average), and puts the two demo logins back in their roles. Only the optional block at the end can destroy rows, and it is commented out |
+| `app/supabase/demo-reset.sql` | **Current** | Paste-to-undo for a public demo: restores the six seed statuses, clears sample ratings, **re-seeds one rating from the demo Reader** (so the queue keeps a Scored section and editors keep an average), puts the two demo logins back in their roles **and back on their genre staffs**, seeds **one reading assignment** (the demo Reader on *The Last Ferry*), and deletes assignments a visitor created that point a demo account at a real manuscript. Wrapped in a guard so a bad paste aborts instead of half-applying. Proved from outside Nov 17 (§2) |
 | `app/supabase/functions/` | **Planned** (§13 wk 5) | Edge Functions — metadata stripping (issue #3), decision-letter email |
 | `docs/404.html` | Current | GitHub Pages fallback: bounces `/app/*` deep links back into the SPA, leaves real 404s alone |
 | `netlify.toml` / `vercel.json` | Not needed | Hosting is GitHub Pages (§5); no static-host config required |
@@ -572,6 +573,26 @@ publishes demo accounts.
   first, push second — the same rule as `decided_at`. (3) Assigning *yourself* to a
   team is allowed (the chief reads too); only the role select and the Activate button
   are disabled on your own row, because those are the two ways to lock yourself out.
+- **The Reading panel is two queries, and half-loaded data reads as a bug.** Assignments
+  say *who* holds a piece; the `members` select says *what they are called*. Between the
+  two replies the panel used to print **"Unknown reader"**, which looks like a broken row
+  rather than a race. `readingLoaded` now gates the list, so a row is either a real name
+  or not drawn yet — and it is never reset to `false` on a reload, because blanking the
+  list after Assign is the same wart in reverse. Any panel that resolves a foreign key
+  through a second query has this shape.
+- **A failed SQL paste rolls back and looks like nothing happened.** The SQL editor wraps
+  what you give it in one transaction, so if statement 7 of `demo-reset.sql` throws, the
+  six statements before it are undone too — the screen just says there was an error and
+  the data looks untouched. That is why the file now opens with a `do $$ … $$` guard that
+  aborts with a readable message when a demo account is missing, instead of failing later
+  on a foreign key. When a paste "didn't do anything," re-read the output for the first
+  error rather than pasting again.
+- **Creating an assignment is a write, so the browser tests cannot do it.** Same reason as
+  uploads (above): the suites are read-only and there is no DELETE policy on
+  `assignments`, so a spec that pressed Assign would leave a row the cleanup cannot
+  remove. `authenticated.spec.ts` asserts the panel renders and the picker is populated;
+  the fan-out itself is covered by `assignments.test.ts` and by the deployed-URL pass in
+  §2.
 - **A password-reset link must land on the app root, never on `/reset-password`.**
   On Pages a deep link is answered by `404.html`, which stashes the path and bounces to
   `/app/`, and `main.tsx` restores it with `history.replaceState`. But the Supabase client
@@ -996,6 +1017,15 @@ real inbox, then move auth mail to Resend.
   person can sign in, and they can read nothing. Activating it in the Staff tab is the
   approval step (issue #5). Same flag as deactivation, which is why the database — not
   the UI — is what ultimately decides.
+- **Genre staff** — a team label on a person (`members.staffs`: Fiction, Poetry,
+  Creative Nonfiction, Visual Arts, or none). It says who usually reads what; it changes
+  nothing a reader is allowed to open.
+- **Assignment** — one row saying "this reader is expected to read this manuscript"
+  (`assignments`). Only the Chief Editor hands them out, and assigning a whole staff is
+  just one click that writes several rows.
+- **Assigned to you** — the highlighted box at the top of the reader queue. A highlight,
+  not a fence: everything else is still below it, because an unassigned piece must not be
+  a piece nobody reads.
 
 ---
 

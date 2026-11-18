@@ -1,4 +1,4 @@
-# Project status — Nov 17, 2026
+# Project status — Nov 18, 2026
 
 Everything in one place: what is live, what was verified and when, what shipped
 today, and what is left. `AGENTS.md` remains the detailed handoff for agents; this
@@ -32,24 +32,29 @@ after the deadline (see "What is left").
 
 ---
 
-## Verified on Nov 17 (nothing assumed)
+## Verified on Nov 18 (nothing assumed)
 
 | Check | Result |
 |---|---|
-| `npm test` (unit + live anon-RLS) | **71/71**, 10 files, 0 skips |
-| `npm run test:e2e` (Chromium) | **17/17**, 22.6s |
+| `npm test` (unit + live anon-RLS) | **112/112**, 13 files, 0 skips |
+| `npm run test:e2e` (Chromium) | **19/19**, 0 skips |
 | `npm run lint` | exit 0 (warnings only, unchanged) |
+| `tsc -b` | clean |
 | Live site and `/app/` | **200 / 200** |
 | Keep-alive cron | green Nov 13 and Nov 16 |
 | Pages deploy runs | every run since Nov 11 green |
-| Browser walkthrough of the **deployed** app | **16/16**, no console errors |
+| Browser walkthrough of the **deployed** app | **14/14**, no console errors |
 
 What the walkthrough proved, signed in through the published demo buttons:
 
-- Reader demo lands on `/reader`, sees all six seeded pieces, **no author contact fields**.
-- Chief demo lands on `/editor`; the detail page shows `David Reyes · david.reyes@example.com` and `2.0 / 5 average from 1 reader`.
-- The **Export** tab downloads a real CSV.
-- `/app/submit` survives the Pages fallback; refreshing a deep `/app/editor/<id>` URL stays put.
+- Chief lands on `/editor`; the **Staff** tab shows a Staffs column, 16 genre chips
+  (four per member), and "Who's on each staff" naming Test Reader on Fiction and Poetry.
+- *The Last Ferry* carries a **Reading** panel with one assignee marked *Not read yet*
+  and a populated reader picker.
+- Reader demo lands on `/reader` and sees **Assigned to you** at the top with that piece
+  **and** the whole queue below it — and no author name anywhere on the page.
+- `/app/submit` survives the Pages fallback; deep `/app/editor/<id>` links stay put.
+  The only console noise is that fallback's own `404`, which is the hack working.
 
 Also probed: anonymous listing of the `manuscripts` bucket returns `[]`, so the
 file boundary holds.
@@ -84,15 +89,39 @@ seeded pieces; it deliberately leaves the seventh alone.
 
 ## Shipped today (committed and deployed)
 
+Nov 18 — the two halves of the editor's people-work:
+
+- **`6c52195` — genre staffs.** `members.staffs` is a `text[]` of the four genre slugs
+  with a check constraint; the Staff tab gained four toggle chips per person plus a
+  "Who's on each staff" summary, and the staff CSV export gained a Staffs column.
+  **Labels only** — a team says who usually reads what and never changes what a reader
+  can open. Empty `{}` means general staff, so no row had to be backfilled.
+- **`1d1944f` — reading assignments.** A new `assignments` table (one row per
+  submission + reader, unique together), written **only by the Chief Editor**. The
+  submission page has a **Reading** panel: pick one reader, or assign a whole genre
+  staff in one click (a fan-out of rows, skipping anyone already on it). Each assignee
+  reads *Not read yet* / *Scored 4 / 5* / *Recused — needs reassignment*. The reader's
+  queue shows **Assigned to you** above the whole blind queue — a highlight, not a
+  fence, so an unassigned piece is still read by someone.
+- **`1f05bf4` — no "Unknown reader" flash.** Assignments and the reader list are two
+  queries; the panel now waits for the names instead of printing a placeholder row.
+- **`3cfa81c`** — recorded the 14-check pass over the deployed app in `AGENTS.md`,
+  plus the staffs/assignments gotchas and glossary entries.
+- **`demo-reset.sql`** now also restores the demo Reader's staffs, seeds one
+  assignment, and deletes assignments a visitor made from a demo account to a real
+  manuscript. Applied and proved from the API.
+
+Nov 17 — the deadline-week risks:
+
 - **#5 phase 1 — a new reader waits for approval.** `members.active` now defaults to
   `false`, the join policy refuses a self-insert that claims `active = true`, and the
   app shows a "waiting for approval" screen instead of an empty queue. Chief-only, by
   design. The app half is deployed and running; whether the migration paste landed is
   the one thing not provable from here (see the check in "What is left").
-- **Demo reset — run and proven (Nov 17).** `demo-reset.sql` was pasted and its
-  effects verified from the outside: *The Last Ferry* back to `In review`, *Porcelain*
-  to `Shortlist`, the `hello notes` rating gone, the seeded `2` present, and the
-  Nov 17 submission untouched. `npm run test:e2e` still **17/17** afterwards.
+- **Demo reset — run and proven.** `demo-reset.sql` was pasted and its effects verified
+  from the outside: *The Last Ferry* back to `In review`, *Porcelain* to `Shortlist`,
+  the `hello notes` rating gone, the seeded `2` present, and the Nov 17 submission
+  untouched.
 - **`74c4fa0`** — `demo-reset.sql` now re-seeds one rating instead of leaving the
   demo with none, plus `deploy-pages@v5` (green), the Node-22 documentation fix, a
   teaching-vs-real callout in tutorial part 4, and the live-state probe written down
@@ -113,13 +142,16 @@ seeded pieces; it deliberately leaves the seventh alone.
   `AGENTS.md` §8.
 - **`docs/handoff.md`** — one page for the club: what they inherit, the
   free-tier pause ritual, the demo-reset lever, and what is not built.
-- **`app/supabase/demo-reset.sql`** — paste-to-undo for a public demo: restores
-  the six seed statuses (with `decided_at` travelling alongside), clears sample
-  ratings, and puts both demo logins back in their roles. **Never executed** —
-  reviewed against the two check constraints, not run. Paste it once to prove it.
+- **`app/supabase/demo-reset.sql`** — paste-to-undo for a public demo: restores the six
+  seed statuses (with `decided_at` travelling alongside), clears sample ratings, puts
+  both demo logins back in their roles, and since Nov 18 restores staffs and one
+  assignment. **Executed and proved** — see the Nov 17 entry above.
 - **Issue #5** — require an editor to approve a reader before the queue opens.
-- **Issue #6** — let editors assign submissions to readers for a reading week.
+  *Phase 1 built; the policy check is in "What is left".*
+- **Issue #6** — let editors assign submissions to readers. *Phase 1 built Nov 18; the
+  reading-week half is still open.*
 - **Issue #7** — take the published demo logins out before a real reading period.
+  *Phase 1 built (the build-time switch); deleting the accounts is the gate.*
 - **Issue #8** — send real email (auth mail off the demo mailer, then decision letters).
 
 ---
@@ -193,16 +225,17 @@ history.
 | 1 | **#8 phase 0** — Resend as Supabase Auth's SMTP | One day, no app code, turns password recovery from "routes correctly" into "delivers" |
 | 2 | **#7 phase 2** — delete the published demo logins | **A gate, not a date:** no published credential may exist when the first real manuscript arrives. The switch (phase 1) is done; the accounts still exist |
 | 3 | **#5** — approve readers | **Built and deployed.** New sign-ups are gated today; one SQL check confirms the policy half |
-| 4 | **#6** — weekly assignments | Depends on #5; both change what a reader sees |
+| 4 | **#6 remainder** — reading weeks and workload counts | Phase 1 (assignments) is built and live; weeks are a scheduling feature, not a security one; the decided model is recorded in `AGENTS.md` §9 #22 |
 
 ### Decisions waiting on you
 
 - **#5:** approval by the **Chief Editor only** (no schema change) or by **any
   editor** (needs a policy widening that hands every editor the staff list,
   including emails)?
-- **#6:** **advisory** assignments (organise the queue, everyone can still read
-  anything) or **strict** ones enforced in RLS (an unassigned story is invisible
-  to everyone)?
+- **#6:** **answered Nov 18** — assignments are **advisory**: the queue shows
+  *Assigned to you* above everything else, because strict RLS assignment would hide an
+  unassigned story from everyone. Only the Chief Editor hands work out; that is the
+  recorded trade-off (a chief who is offline is a bottleneck).
 - **#8:** does `Hold` get a letter, and whose words are in it? That is Kennings'
   voice, not the project's.
 
