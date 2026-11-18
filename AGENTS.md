@@ -59,6 +59,12 @@ Submissions page on Sep 23, 2026 and live in the app.
   concept yet (§9 #22). `demo-reset.sql` now restores the demo Reader's staffs, gives
   them one seeded piece, and deletes visitor-made assignments that point a demo
   account at a real manuscript. `npm test` **112/112**, `npm run test:e2e` **19/19**.
+  **Verified on the deployed URL Nov 18** with a 14-check browser pass: chief signs in
+  and sees the Staffs column, 16 genre chips, and a summary naming Test Reader on
+  Fiction; the Reading panel on *The Last Ferry* shows one unread assignee and a
+  populated reader picker; the demo Reader's queue shows *Assigned to you* with that
+  piece **and** the whole queue below; no author name reaches the reader; no console
+  errors (Pages' deep-link `404` excluded — that is the `404.html` fallback working).
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
   Jekyll site). Backend is **Supabase**, live in project `qsynlsbltpnhzncpqerz`
