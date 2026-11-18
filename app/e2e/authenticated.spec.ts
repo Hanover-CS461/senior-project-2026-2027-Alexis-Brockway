@@ -110,7 +110,11 @@ test.describe('authenticated roles', () => {
     ).toBeVisible()
 
     await page.getByRole('button', { name: 'Staff' }).click()
-    await expect(page.getByRole('heading', { name: 'Staff' })).toBeVisible()
+    // exact: a substring match also hits the "Who's on each staff" heading
+    // below the table, which is a strict-mode violation.
+    await expect(
+      page.getByRole('heading', { name: 'Staff', exact: true }),
+    ).toBeVisible()
 
     // Read-only: the chips are the assignment control, and below the table the
     // same data is summarised as "who is on each staff". Both read `staffs`
@@ -122,6 +126,24 @@ test.describe('authenticated roles', () => {
     await expect(page.getByRole('button', { name: 'Fiction' }).first()).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Photography & Visual Art' }).first(),
+    ).toBeVisible()
+  })
+
+  test('the chief editor can hand a piece to readers', async ({ page }) => {
+    await signIn(
+      page,
+      process.env.TEST_CHIEF_EMAIL!,
+      process.env.TEST_CHIEF_PASSWORD!,
+    )
+
+    // A seeded submission. Read-only: the panel, the reader picker and the
+    // staff shortcut all render, and nothing is written.
+    await page.goto('/editor/a1111111-1111-4111-8111-111111111111')
+
+    await expect(page.getByRole('heading', { name: 'Reading' })).toBeVisible()
+    await expect(page.getByLabel('Add a reader')).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Assign', exact: true }),
     ).toBeVisible()
   })
 

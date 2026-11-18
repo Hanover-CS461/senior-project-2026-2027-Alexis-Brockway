@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { readerStatus } from '../lib/statuses'
+import { splitReaderQueue } from '../lib/assignments'
 
 interface QueueItem {
   id: string
@@ -16,6 +17,7 @@ function ReaderQueuePage() {
   const { member } = useAuth()
   const [items, setItems] = useState<QueueItem[]>([])
   const [scored, setScored] = useState<Set<string>>(new Set())
+  const [assignedIds, setAssignedIds] = useState<Set<string>>(new Set())
   const [view, setView] = useState<'todo' | 'done'>('todo')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +50,19 @@ function ReaderQueuePage() {
         if (!cancelled) {
           setScored(new Set((mine ?? []).map((r) => r.submission_id as string)))
         }
+
+        // Only the caller's own rows come back (RLS: "readers read own
+        // assignments"), so this is the whole "assigned to you" set. It is a
+        // highlight, not a fence: the rest of the queue is still below.
+        const { data: given } = await supabase
+          .from('assignments')
+          .select('submission_id')
+          .eq('reader_id', member.user_id)
+        if (!cancelled) {
+          setAssignedIds(
+            new Set((given ?? []).map((a) => a.submission_id as string)),
+          )
+        }
       }
 
       setLoading(false)
@@ -59,8 +74,27 @@ function ReaderQueuePage() {
     }
   }, [member])
 
-  const visible =
-    view === 'todo' ? items.filter((s) => !scored.has(s.id)) : items.filter((s) => scored.has(s.id))
+  const { assigned, rest } = splitReaderQueue(items, assignedIds, scored)
+  const done = items.filter((s) => scored.has(s.id))
+  const toRead = assigned.length + rest.length
+
+  const card = (s: QueueItem) => {
+    const shown = readerStatus(s.status)
+    return (
+      <li key={s.id} className="queue-item">
+        <Link to={`/reader/${s.id}`}>
+          <div className="queue-item-top">
+            <h2>{s.title}</h2>
+            <span className={shown.badge}>{shown.label}</span>
+          </div>
+          <p className="queue-genre">{s.genre}</p>
+          <p className="queue-excerpt">
+            Received {new Date(s.created_at).toLocaleDateString()}
+          </p>
+        </Link>
+      </li>
+    )
+  }
 
   return (
     <div className="page">
@@ -76,14 +110,14 @@ function ReaderQueuePage() {
           className={`tab ${view === 'todo' ? 'active' : ''}`}
           onClick={() => setView('todo')}
         >
-          To read ({items.filter((s) => !scored.has(s.id)).length})
+          To read ({toRead})
         </button>
         <button
           type="button"
           className={`tab ${view === 'done' ? 'active' : ''}`}
           onClick={() => setView('done')}
         >
-          Scored ({scored.size})
+          Scored ({done.length})
         </button>
       </div>
 
@@ -91,32 +125,36 @@ function ReaderQueuePage() {
 
       {loading ? (
         <p className="empty">Loading queue…</p>
-      ) : visible.length === 0 ? (
-        <p className="empty">
-          {view === 'todo'
-            ? 'Nothing left to read — everything in the queue has a score from you.'
-            : "You haven't scored anything yet."}
-        </p>
+      ) : view === 'done' ? (
+        done.length === 0 ? (
+          <p className="empty">You haven't scored anything yet.</p>
+        ) : (
+          <ul className="queue-list">{done.map(card)}</ul>
+        )
       ) : (
-        <ul className="queue-list">
-          {visible.map((s) => {
-            const shown = readerStatus(s.status)
-            return (
-              <li key={s.id} className="queue-item">
-                <Link to={`/reader/${s.id}`}>
-                  <div className="queue-item-top">
-                    <h2>{s.title}</h2>
-                    <span className={shown.badge}>{shown.label}</span>
-                  </div>
-                  <p className="queue-genre">{s.genre}</p>
-                  <p className="queue-excerpt">
-                    Received {new Date(s.created_at).toLocaleDateString()}
-                  </p>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+        <>
+          {assigned.length > 0 && (
+            <section className="assigned-box">
+              <h2>Assigned to you</h2>
+              <p className="hint">An editor asked you to read these.</p>
+              <ul className="queue-list">{assigned.map(card)}</ul>
+            </section>
+          )}
+
+          {rest.length > 0 ? (
+            <>
+              {assigned.length > 0 && (
+                <h2 className="queue-section-title">The whole queue</h2>
+              )}
+              <ul className="queue-list">{rest.map(card)}</ul>
+            </>
+          ) : assigned.length === 0 ? (
+            <p className="empty">
+              Nothing left to read — everything in the queue has a score from
+              you.
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   )

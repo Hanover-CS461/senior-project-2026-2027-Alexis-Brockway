@@ -45,6 +45,20 @@ Submissions page on Sep 23, 2026 and live in the app.
   behaved identically the moment it was applied. Pasted and proved from outside the
   same day: the anon probe answered `200` on `select=staffs`, `npm test` **90/90**,
   `npm run test:e2e` **18/18**.
+- **Reading assignments — built Nov 18.** The other half of issue #6, and the thing
+  "genre staffs" is not: a staff says who *can* read fiction, an assignment says who is
+  expected to read **this** manuscript. The chief opens a submission and either picks
+  one reader or assigns **a whole staff in one click** (a fan-out of individual rows,
+  skipping anyone already on it) from a new **Reading** panel on `/editor/:id`, which
+  also shows each assignee as *Not read yet* / *Scored 4 / 5* / *Recused — needs
+  reassignment*. The reader queue grew an **Assigned to you** box above the whole
+  queue — a highlight, not a fence, so an unassigned piece is still read by someone.
+  `assignments` (unique `submission_id, reader_id`) is **chief-writes only**, and the
+  panel does not render for other editors, so reader names stay behind the `members`
+  policy they already lived behind. No `week_of` column — no screen has a reading-week
+  concept yet (§9 #22). `demo-reset.sql` now restores the demo Reader's staffs, gives
+  them one seeded piece, and deletes visitor-made assignments that point a demo
+  account at a real manuscript. `npm test` **112/112**, `npm run test:e2e` **19/19**.
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
   Jekyll site). Backend is **Supabase**, live in project `qsynlsbltpnhzncpqerz`
@@ -78,8 +92,8 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 17)**: `npm test` **90/90** and
-  `npm run test:e2e` **18/18**, with no skips. `app/.env.test` (gitignored) holds two
+- **Tests** — **green across the board (Nov 18)**: `npm test` **112/112** and
+  `npm run test:e2e` **19/19**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
   test credentials are committed; a fresh clone gets 7 clean skips by design. Note:
@@ -251,8 +265,8 @@ All app commands run from `app/`:
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped), `DemoAccessBox.tsx` (the only module holding the published demo logins) |
-| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor` + `isPendingApproval`), `staffs.ts` (pure genre-team helpers: `toggleStaff`, `staffNamesFor`, `groupByStaff`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `demoMode.ts` (the `VITE_DEMO_MODE` build-time rule), `scrub.ts` (metadata stripping + `storageNameFor`) |
-| `app/src/lib/*.test.ts` | Current | `roles`, `staffs`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
+| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor` + `isPendingApproval`), `staffs.ts` (pure genre-team helpers: `toggleStaff`, `staffNamesFor`, `groupByStaff`), `assignments.ts` (pure reading-assignment helpers: `assigneesFor`, `staffTargets`, `splitReaderQueue`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `demoMode.ts` (the `VITE_DEMO_MODE` build-time rule), `scrub.ts` (metadata stripping + `storageNameFor`) |
+| `app/src/lib/*.test.ts` | Current | `roles`, `staffs`, `assignments`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
 | `app/e2e/` | Current | Playwright specs: public submission, blind-review UI, editor gating, authenticated roles, `password-recovery` (request form, expired link, rejected link), `metadata-scrub` (a real JPEG through a real canvas) |
@@ -321,6 +335,11 @@ Reader cannot read identity even by calling the database directly.
   work — nothing filters a queue on it (§9 #21).
 - `member_audit` — `actor_id, target_user_id, action, old_value, new_value,
   created_at`; written by a trigger on `members` update.
+- `assignments` — `id, submission_id (FK), reader_id (FK auth.users), assigned_by,
+  created_at`, with `unique (submission_id, reader_id)`. One row = "this reader is
+  expected to read this piece". A staff-wide assign is a fan-out of rows, not a second
+  kind of record. Readers read their own rows, the chief reads all, and **only the
+  chief writes** (§9 #22). No `week_of` column on purpose.
 
 **Helper functions** (all `security definer`):
 - `member_count()` — total members (used by the bootstrap policy).
@@ -694,6 +713,16 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   in keeping with the project, but hides unassigned stories from everyone) and the
   obstacle that an assignment UI needs a narrow `list_readers()` function, because
   editors cannot read `members`.
+  **Built Nov 18, phase 1.** `assignments` table (`20261118010000`), the Reading panel
+  on `/editor/:id`, the *Assigned to you* box on the reader queue, and the recusal
+  surfacing as "needs reassignment" all work against real rows. Deviations recorded:
+  no `week_of` (nothing has a reading-week concept yet — `created_at` carries the date),
+  **chief-only** writes by decision, and the `list_readers()` obstacle dissolved rather
+  than being solved — the panel is chief-only, and the chief can already read `members`.
+  Also added: assign a whole genre staff in one click (fan-out of individual rows).
+  **Still open:** reading weeks/scheduling, per-reader workload counts, and the
+  read-only-suite problem — creating an assignment is a write, so the browser tests
+  assert the panel renders but never press Assign.
 - **#7 — Take the published demo logins out before a real reading period.** Not
   cosmetic: the published **Chief Editor** can read `authors`, so the day Kennings opens
   a real period with the demo box live, anyone with the URL is one click from every
@@ -874,6 +903,20 @@ real inbox, then move auth mail to Resend.
     assignment model, which needs its own decision about unassigned stories. The
     empty array means "general staff" so nothing had to be backfilled, and a check
     constraint keeps the column to real genre slugs.
+22. **An assignment is one reader, one manuscript — and only the chief hands it out**
+    (Nov 18). `assignments` stores a row per (submission, reader); "assign the whole
+    Fiction staff" is a fan-out of those rows, not a second kind of record, so the
+    queue and the database only ever reason about one shape. `unique (submission_id,
+    reader_id)` makes the fan-out idempotent. No `week_of`: issue #6 proposed it, but
+    no screen has a reading-week concept, and a column nothing reads is a column
+    nobody keeps correct. The assignment **highlights** rather than filters — the
+    reader queue shows *Assigned to you* above the whole blind queue — because strict
+    assignment hides unassigned work from everyone, and the failure mode is a piece
+    nobody reads. Chief-only, which retired the planned `list_readers()` function: the
+    panel does not render for other editors, and the chief already reads `members`.
+    The cost, stated plainly: only editors can see who owes a read, and a chief who is
+    offline is a bottleneck. Reassignment is delete + insert — there is no UPDATE
+    policy, so an assignment cannot be quietly rewritten in place.
 
 ---
 
@@ -1152,6 +1195,10 @@ too — the built-in mailer is a demo, §7), join-with-a-code, real club pilot.
   audit (§2, §9 #21). Labels only; assignment stays issue #6. **Still to do by hand:**
   re-run `demo-reset.sql` so the demo Reader is back on Fiction + Poetry and the
   summary has something in it.
+- ~~**Reading assignments**~~ — built Nov 18: `assignments`, the Reading panel, the
+  *Assigned to you* box, staff fan-out, recusal surfacing (§2, §8 #6, §9 #22). Applied
+  to the live project and proved from the API. Reading weeks and workload counts remain
+  the open half of #6.
 - **Still open this week:** the two SQL pastes only the user can do (demo reset done;
   the reader-approval check is a `pg_policies` query), the two stray Storage objects, one
   real inbox to prove auth mail *delivers*, and a phone on cellular.

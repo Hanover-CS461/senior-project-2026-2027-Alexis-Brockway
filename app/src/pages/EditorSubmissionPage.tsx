@@ -1,6 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
+import { canManageMembers } from '../lib/roles'
+import {
+  assigneeLabel,
+  assigneesFor,
+  staffTargets,
+  staffsWithTargets,
+  unassignedReaders,
+  type AssignableReader,
+  type AssignmentRow,
+} from '../lib/assignments'
+import { staffLabel } from '../data/members'
+import { staffNamesFor } from '../lib/staffs'
 import {
   DECISION_STATUSES,
   WORKFLOW_STATUSES,
@@ -26,6 +39,7 @@ interface Author {
 }
 
 interface RatingRow {
+  reader_id: string
   score: number | null
   notes: string
   recused: boolean
@@ -34,6 +48,8 @@ interface RatingRow {
 
 function EditorSubmissionPage() {
   const { submissionId } = useParams()
+  const { member: currentMember, session } = useAuth()
+  const isChief = canManageMembers(currentMember?.role)
   const [submission, setSubmission] = useState<Submission | null>(null)
   const [author, setAuthor] = useState<Author | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -42,6 +58,31 @@ function EditorSubmissionPage() {
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [ratings, setRatings] = useState<RatingRow[]>([])
   const [missing, setMissing] = useState(false)
+
+  // Reading assignments. Only the Chief Editor can write them (RLS refuses
+  // anyone else), so the panel renders only for the chief — which also means
+  // reader names stay behind the `members` policy they already lived behind.
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([])
+  const [readers, setReaders] = useState<AssignableReader[]>([])
+  const [pickReader, setPickReader] = useState('')
+  const [pickStaff, setPickStaff] = useState('')
+  const [readingBusy, setReadingBusy] = useState(false)
+  const [readingError, setReadingError] = useState<string | null>(null)
+
+  const loadReading = useCallback(async () => {
+    if (!submissionId) return
+    const { data: assigned } = await supabase
+      .from('assignments')
+      .select('id, submission_id, reader_id')
+      .eq('submission_id', submissionId)
+    setAssignments(assigned ?? [])
+
+    const { data: staff } = await supabase
+      .from('members')
+      .select('user_id, name, staffs')
+      .eq('active', true)
+    setReaders(staff ?? [])
+  }, [submissionId])
 
   useEffect(() => {
     if (!submissionId) {
@@ -82,17 +123,21 @@ function EditorSubmissionPage() {
       // Editors read every rating (RLS: "editors read all ratings").
       const { data: ratingRows } = await supabase
         .from('ratings')
-        .select('score, notes, recused, created_at')
+        .select('reader_id, score, notes, recused, created_at')
         .eq('submission_id', submissionId)
         .order('created_at', { ascending: true })
       if (!cancelled) setRatings(ratingRows ?? [])
+
+      // Chief-only in practice: a non-chief's copy of these two selects is
+      // filtered to their own row by RLS, and the panel is not rendered anyway.
+      if (!cancelled) void loadReading()
     }
 
     load()
     return () => {
       cancelled = true
     }
-  }, [submissionId])
+  }, [submissionId, loadReading])
 
   // One writer for both halves of the workflow. `decided_at` and `status` must
   // move together: the database refuses a decision without a timestamp, and a
@@ -136,6 +181,45 @@ function EditorSubmissionPage() {
     if (ok) void save('Shortlist', false)
   }
 
+  // Hand the piece to one reader, or to everyone on a staff in one action.
+  // The lists are filtered first so the button's count is the number of rows
+  // actually written; `unique (submission_id, reader_id)` is the backstop.
+  const assign = async (readerIds: string[]) => {
+    if (!submissionId || readerIds.length === 0) return
+    setReadingBusy(true)
+    setReadingError(null)
+    const { error } = await supabase.from('assignments').insert(
+      readerIds.map((reader_id) => ({
+        submission_id: submissionId,
+        reader_id,
+        assigned_by: session?.user.id ?? null,
+      })),
+    )
+    setReadingBusy(false)
+    if (error) {
+      setReadingError(error.message)
+      return
+    }
+    setPickReader('')
+    setPickStaff('')
+    void loadReading()
+  }
+
+  const unassign = async (id: string) => {
+    setReadingBusy(true)
+    setReadingError(null)
+    const { error } = await supabase
+      .from('assignments')
+      .delete()
+      .eq('id', id)
+    setReadingBusy(false)
+    if (error) {
+      setReadingError(error.message)
+      return
+    }
+    void loadReading()
+  }
+
   if (missing) {
     return <Navigate to="/editor" replace />
   }
@@ -143,6 +227,10 @@ function EditorSubmissionPage() {
   if (!submission) {
     return <p className="page empty">Loading…</p>
   }
+
+  const assignees = assigneesFor(assignments, readers, ratings)
+  const available = unassignedReaders(readers, assignments)
+  const staffOptions = staffsWithTargets(readers, assignments)
 
   return (
     <div className="page">
@@ -236,6 +324,113 @@ function EditorSubmissionPage() {
         </div>
         {statusError && <p className="error">{statusError}</p>}
       </div>
+
+      {isChief && (
+        <div className="reading-box">
+          <h2>Reading</h2>
+          <p className="hint">
+            Hand this piece to readers. Assigned work appears at the top of
+            their queue; the rest of the blind queue stays visible below it, so
+            a piece nobody was given still gets read.
+          </p>
+
+          {readingError && <p className="error">{readingError}</p>}
+
+          {assignees.length === 0 ? (
+            <p className="empty">Nobody assigned yet.</p>
+          ) : (
+            <ul className="assignee-list">
+              {assignees.map((a) => (
+                <li key={a.reader_id}>
+                  <span className="assignee-name">{a.name}</span>
+                  {a.staffs.length > 0 && (
+                    <span className="hint"> {staffNamesFor(a.staffs)}</span>
+                  )}
+                  <span className={`assignee-state state-${a.state}`}>
+                    {assigneeLabel(a.state, a.score)}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-small btn-quiet"
+                    disabled={readingBusy}
+                    onClick={() => {
+                      const row = assignments.find(
+                        (x) => x.reader_id === a.reader_id,
+                      )
+                      if (row) void unassign(row.id)
+                    }}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="assign-controls">
+            <select
+              aria-label="Add a reader"
+              value={pickReader}
+              disabled={readingBusy || available.length === 0}
+              onChange={(e) => setPickReader(e.target.value)}
+            >
+              <option value="">
+                {available.length === 0
+                  ? 'Everyone is already on it'
+                  : 'Choose a reader…'}
+              </option>
+              {available.map((r) => (
+                <option key={r.user_id} value={r.user_id}>
+                  {r.name}
+                  {r.staffs && r.staffs.length > 0
+                    ? ` — ${staffNamesFor(r.staffs)}`
+                    : ''}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="btn btn-small"
+              disabled={readingBusy || pickReader === ''}
+              onClick={() => void assign([pickReader])}
+            >
+              Assign
+            </button>
+          </div>
+
+          {staffOptions.length > 0 && (
+            <div className="assign-controls">
+              <select
+                aria-label="Add a whole staff"
+                value={pickStaff}
+                disabled={readingBusy}
+                onChange={(e) => setPickStaff(e.target.value)}
+              >
+                <option value="">Choose a staff…</option>
+                {staffOptions.map((s) => (
+                  <option key={s.slug} value={s.slug}>
+                    {staffLabel(s.slug)} — {s.count} not yet assigned
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-small"
+                disabled={readingBusy || pickStaff === ''}
+                onClick={() =>
+                  void assign(
+                    staffTargets(readers, assignments, pickStaff).map(
+                      (r) => r.user_id,
+                    ),
+                  )
+                }
+              >
+                Assign whole staff
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="ratings-box">
         <h2>Ratings</h2>

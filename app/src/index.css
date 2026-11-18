@@ -516,6 +516,81 @@ p {
   font-weight: 600;
 }
 
+/* Reading assignments: who was given this piece, and how it is going. */
+.reading-box {
+  margin-top: 28px;
+}
+
+.assignee-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 12px;
+}
+
+.assignee-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.assignee-name {
+  font-weight: 600;
+}
+
+.assignee-state {
+  font-size: 13px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.state-scored {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+/* A recusal is not a failure — it is work the editor has to move. */
+.state-recused {
+  border-color: #b35900;
+  color: #b35900;
+  font-weight: 600;
+}
+
+.assign-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.assign-controls select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.assigned-box {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--teal);
+  border-radius: 10px;
+}
+
+.assigned-box h2 {
+  margin-bottom: 2px;
+}
+
+.queue-section-title {
+  margin-top: 28px;
+}
+
 .members h3 {
   margin: 28px 0 4px;
 }
