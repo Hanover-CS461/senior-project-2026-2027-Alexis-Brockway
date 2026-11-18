@@ -1,8 +1,10 @@
 # Project status — Nov 18, 2026
 
 Everything in one place: what is live, what was verified and when, what shipped
-today, and what is left. `AGENTS.md` remains the detailed handoff for agents; this
-page is the summary a human reads first.
+today, and what is left. `AGENTS.md` is the short handoff for agents (state,
+commands, schema, the gotchas that bite first); its long tail — every gotcha, the
+history, the decisions with reasoning — lives in `agent-docs/`. This page is the
+summary a human reads first.
 
 ---
 
@@ -265,7 +267,10 @@ history.
 
 ## Where the detail lives
 
-- `AGENTS.md` — full handoff: schema, RLS policies, every gotcha, decision history
+- `AGENTS.md` — the short handoff for agents: state, commands, schema, RLS, the gotchas
+  that bite first, open work, decisions
+- `agent-docs/` — the long tail: `gotchas.md` (every gotcha in full), `history.md` (what
+  was built when, and what was proven), `decisions.md` (the 22 decisions with reasoning)
 - `app/README.md` — developer docs: commands, RLS matrix, known gaps
 - `docs/handoff.md` — the club-facing page (also live on the site)
 - `app/supabase/demo-reset.sql` — the undo for a vandalised demo
