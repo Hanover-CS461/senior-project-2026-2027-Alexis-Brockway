@@ -36,7 +36,7 @@ after the deadline (see "What is left").
 
 | Check | Result |
 |---|---|
-| `npm test` (unit + live anon-RLS) | **66/66**, 10 files, 0 skips |
+| `npm test` (unit + live anon-RLS) | **71/71**, 10 files, 0 skips |
 | `npm run test:e2e` (Chromium) | **17/17**, 22.6s |
 | `npm run lint` | exit 0 (warnings only, unchanged) |
 | Live site and `/app/` | **200 / 200** |
@@ -143,7 +143,7 @@ Verified Nov 17 after the refactor, not assumed:
 
 - `npm run test:e2e` **17/17**, including the demo-box spec, so the
   `E2E_DEMO_ACCESS` wiring is right.
-- `npm test` **66/66**, `npm run lint` exit 0, `tsc` clean.
+- `npm test` **71/71**, `npm run lint` exit 0, `tsc` clean.
 - `VITE_DEMO_MODE=false npm run build` → **zero** matches for either demo address
   in `dist/assets/*.js`.
 - `VITE_DEMO_MODE= npm run build` → fails loudly with the intended message.

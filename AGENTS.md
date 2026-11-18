@@ -22,8 +22,19 @@ Submissions page on Sep 23, 2026 and live in the app.
 
 ---
 
-## 2. Current status (Nov 12, 2026)
+## 2. Current status (Nov 17, 2026)
 
+- **Nov 17, one session, five things landed.** (1) Demo access became a
+  **build-time** switch (`VITE_DEMO_MODE`) — a production build fails without it, and
+  `false` drops the credentials from the bundle (issue #7 phase 1, §7). (2) **A new
+  reader now waits for approval** (issue #5 phase 1): `active` defaults to `false`, the
+  join policy refuses a self-insert claiming otherwise, and the app explains the wait
+  (§6, §7). (3) `demo-reset.sql` was **run for the first time and proven** from the
+  outside, after being fixed so it no longer erases the demo's only rating. (4) The live
+  project was probed read-only and turned out **not to be demo-only any more** — a real
+  submission, a real student reader, personal accounts (§7). (5) Housekeeping:
+  `deploy-pages@v5`, a corrected Node note in §3, and a teaching-vs-real callout in the
+  tutorial.
 - **Proposal** — DONE, live on GitHub Pages (URL at the end of §12).
 - **App** lives in `app/` (React + Vite + TS), separate from `docs/` (the
   Jekyll site). Backend is **Supabase**, live in project `qsynlsbltpnhzncpqerz`
@@ -33,6 +44,8 @@ Submissions page on Sep 23, 2026 and live in the app.
 - **Auth** — DONE: in-app sign-up/sign-in; the first sign-up becomes Chief
   Editor (enforced by RLS), everyone after joins as Reader. **The bootstrap no
   longer fires** — `member_count()` is 4, so a new sign-up joins as a Reader.
+  **Since Nov 17 that reader is also pending** — `active` defaults to `false` and only
+  the Chief Editor's activation opens the queue (§6, §7, issue #5).
   **Email confirmation is now OFF** (`mailer_autoconfirm: true` live, and
   `config.toml` already had `enable_confirmations = false`), so sign-up returns a
   live session immediately. See §7. All three password fields — sign-in, and both
@@ -55,8 +68,8 @@ Submissions page on Sep 23, 2026 and live in the app.
   `submissions` and splits into To read / Scored, detail page opens the manuscript via
   a signed URL and saves score, notes and recusal. `/reader` is login-gated. Seeded
   with six sample submissions (`app/supabase/seed.sql`).
-- **Tests** — **green across the board (Nov 12)**: `npm test` **66/66** and
-  `npm run test:e2e` **15/15**, with no skips. `app/.env.test` (gitignored) holds two
+- **Tests** — **green across the board (Nov 17)**: `npm test` **71/71** and
+  `npm run test:e2e` **17/17**, with no skips. `app/.env.test` (gitignored) holds two
   throwaway accounts, and the test-Chief is `chief_editor`, which is what unblocked
   the last assertion. **CI still runs the anonymous half only**, because no
   test credentials are committed; a fresh clone gets 7 clean skips by design. Note:
@@ -97,7 +110,7 @@ Submissions page on Sep 23, 2026 and live in the app.
   cannot delete), and one real inbox to prove auth mail is *delivered*, not just routed
   (§8).
 - **Verified end-to-end Nov 17, 2026** (read-only; nothing about the app changed):
-  `npm test` **66/66**, `npm run test:e2e` **17/17**, live site and `/app/` both **200**,
+  `npm test` **71/71**, `npm run test:e2e` **17/17**, live site and `/app/` both **200**,
   keep-alive cron green Nov 13 and Nov 16, and a browser pass over the *deployed* URL
   **16/16**. What that pass proved: both demo accounts land where they should (reader →
   `/reader`, chief → `/editor`); the reader queue shows all six seeded pieces and no
@@ -228,7 +241,7 @@ All app commands run from `app/`:
 | **`app/`** | **The app** | React + Vite + TS submission manager |
 | `app/src/pages/` | Current | HomePage, GenrePage, GenreRulesPage, SubmitPage, LoginPage, ForgotPasswordPage, ResetPasswordPage, ReaderQueuePage, ReaderSubmissionPage, EditorDashboardPage, EditorSubmissionPage |
 | `app/src/components/` | Current | `RequireAuth.tsx` (route guard), `MemberManager.tsx` (staff admin, now DB-backed), `ExportPanel.tsx` (CSV export, session-scoped), `DemoAccessBox.tsx` (the only module holding the published demo logins) |
-| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `scrub.ts` (metadata stripping + `storageNameFor`) |
+| `app/src/lib/` | Current | `supabase.ts` (client + `authLinkError`), `auth.tsx` (AuthProvider/`useAuth`/recovery flag/`memberLoading`), `appUrl.ts` (where emailed links point), `authLink.ts` (dead-link parsing), `roles.ts` (pure role helpers + `landingFor` + `isPendingApproval`), `statuses.ts` (workflow ladder + badge tones + the reader-facing label), `membership.ts` (`joinClub` + `MembershipClient` seam), `csv.ts` + `exportData.ts` (pure CSV building, formula-safe), `download.ts` (blob save), `demoAccounts.ts` (published demo logins), `demoMode.ts` (the `VITE_DEMO_MODE` build-time rule), `scrub.ts` (metadata stripping + `storageNameFor`) |
 | `app/src/lib/*.test.ts` | Current | `roles`, `membership`, `statuses`, `appUrl`, `authLink`, `csv`, `exportData`, `scrub` (unit), `rls` (live anon boundary), `rls-auth` (auth boundary, env-gated) |
 | `app/src/data/` | Current | `genres.ts` (real Kennings rules — source of truth), `members.ts` (roles + types). The fake reader data (`submissions/manuscripts/ratings.ts`) was deleted Oct 29 when the reader flow went onto Supabase |
 | `app/supabase/migrations/` | **Canonical** | Versioned schema (tables, functions, RLS, storage, audit) applied with `npm run db:push` |
@@ -491,6 +504,18 @@ publishes demo accounts.
   been linked, the migration is a manual paste by the user, so the safe order is:
   write the migration → commit → *user pastes* → push. The decision workflow
   (`decided_at`) is currently in exactly that state.
+- **The reader-approval migration may be unapplied, and nothing in the app can tell.**
+  `20261117000000_reader_approval.sql` is committed and the app half is deployed, so a
+  new sign-up is already gated (it sends `active = false`). What the migration adds is
+  the *lock*: the join policy refuses a hand-rolled insert that claims `active = true`.
+  There is no readable trace of a policy from PostgREST, so the only proof is:
+  ```sql
+  select policyname, with_check from pg_policies
+  where tablename = 'members' and policyname = 'members join once, first as chief';
+  ```
+  `with_check` must contain `active = false`. Same class of lesson as the auth-URL
+  probes (§8): a change the dashboard reports as saved is not saved until something
+  outside the dashboard says so.
 - **`status` and `decided_at` must be written together.** The
   `submissions_decided_at_matches_status` constraint rejects a decision with no
   timestamp *and* a timestamp on a workflow status. Any code (or hand-run SQL) that
@@ -798,6 +823,23 @@ real inbox, then move auth mail to Resend.
     `manuscript_path` is visible to readers, so the author's filename in that path leaked
     the identity that blind review exists to withhold. Nothing may reintroduce it: no
     original filenames, no author name in the path, ever.
+18. **Demo access is a build-time decision** (Nov 17). `VITE_DEMO_MODE` must be `"true"`
+    or `"false"` for any production build or the build fails, and `false` removes the
+    credentials from the bundle instead of hiding the box — a hidden box is still a
+    published password to anyone who reads the JavaScript. `.env.production` says `true`
+    for the graded demo. This is issue #7 phase 1; phase 2 is deleting the accounts,
+    because the passwords are in git history.
+19. **Approval is the Chief Editor's, and a new account is pending by default** (Nov 17).
+    The alternative — any editor approves — needs the `members` SELECT policy widened,
+    which hands every editor the whole staff list, emails included. So a reader
+    self-inserts with `active = false`, the policy *refuses* an insert claiming
+    otherwise, and the bootstrap chief branch keeps `active = true` so a fresh project
+    can still be born. The rule lives in the database; the app only explains it.
+20. **A demo reset must reset *to* something, not just delete.** `demo-reset.sql` used to
+    clear every sample rating, which left the queue with no "Scored" section and every
+    editor page saying "no ratings yet" — a clean demo that looked broken. It now
+    re-seeds one rating from the demo Reader. Same lesson as #18: the visible state is
+    part of the artifact.
 
 ---
 
@@ -867,6 +909,10 @@ real inbox, then move auth mail to Resend.
 - **Roles** — Managing Editor / Reader / Submitter (external, no accounts). The
   Member manager uses the finer 6-role ladder: Reader → Staff Editor → Editor →
   Co-Editor → Chief Editor → Advisor.
+- **Pending reader** — a member row with `active = false`: the account exists, the
+  person can sign in, and they can read nothing. Activating it in the Staff tab is the
+  approval step (issue #5). Same flag as deactivation, which is why the database — not
+  the UI — is what ultimately decides.
 
 ---
 
@@ -1058,6 +1104,19 @@ letters, Resend, invite codes, and the club pilot all come *after* this deadline
 
 **After the 5 weeks:** decision letters + Resend (and move **auth email** onto Resend
 too — the built-in mailer is a demo, §7), join-with-a-code, real club pilot.
+
+### Week 5.5 — the deadline week: three real risks closed (Nov 17)
+- ~~**Demo access reachable by a live build**~~ — phase 1 done (`VITE_DEMO_MODE` as a
+  build-time switch, §7/#18). Phase 2, deleting the accounts, stays a gate before a real
+  reading period.
+- ~~**A stranger could read the queue by signing up**~~ — done: new accounts are pending
+  until the Chief Editor activates them (`20261117000000`, §6/#19). This one was found
+  the same day a real student signed up and became an active reader, which is the
+  clearest argument for it being first among the reader-side issues.
+- ~~**The demo reset erased the demo**~~ — fixed and run; verified from outside (§2, #20).
+- **Still open this week:** the two SQL pastes only the user can do (demo reset done;
+  the reader-approval check is a `pg_policies` query), the two stray Storage objects, one
+  real inbox to prove auth mail *delivers*, and a phone on cellular.
 
 ### After Nov 24 — making the URL the club's
 
