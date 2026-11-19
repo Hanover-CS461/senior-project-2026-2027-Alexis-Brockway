@@ -102,6 +102,15 @@ deliberately and record the new one — don't quietly edit the old text.
     plainly: only editors can see who owes a read, and a chief who is offline is a
     bottleneck. Reassignment is delete + insert — there is no UPDATE policy, so an
     assignment cannot be quietly rewritten in place.
+23. **A real submission outranks a tidy demo** (Nov 19). The live project holds one
+    submission that arrived through the public form — "Among Us" (Poetry, Nov 17) — and
+    it is `Accepted`. The tidy move would be to reset it to `Received` or delete it so the
+    demo matches `seed.sql`; that was rejected. Deleting it is destructive and looks
+    exactly like deleting a real writer's manuscript, and the `Accepted` decision is the
+    only end-to-end proof that the public form, the author row, and the status ladder all
+    work on data nobody typed by hand. The rule that follows: **`demo-reset.sql` only
+    touches seed UUIDs**, and no agent deletes a non-seed row on assumption. Demo tidiness
+    is not worth one real manuscript.
 
 ---
 

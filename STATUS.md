@@ -272,9 +272,9 @@ What remains is the post-deadline list below.
 
 ### Decisions waiting on you
 
-- **#5:** approval by the **Chief Editor only** (no schema change) or by **any
-  editor** (needs a policy widening that hands every editor the staff list,
-  including emails)?
+- **#5:** **answered Nov 19** — approval stays the **Chief Editor's alone** (no schema
+  change, no widening of `members` SELECT). The live policy is applied and proved; a
+  student was approved and the audit row names the chief who did it.
 - **#6:** **answered Nov 18** — assignments are **advisory**: the queue shows
   *Assigned to you* above everything else, because strict RLS assignment would hide an
   unassigned story from everyone. Only the Chief Editor hands work out; that is the

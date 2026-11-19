@@ -335,6 +335,13 @@ module graph is not. That is the whole runtime of `npm test`.
 
 ## 7. UI states that read as bugs
 
+**A desktop-only layout reads as a broken page on a phone.** Until Nov 19 the shell had
+no media queries: `.site-nav` was one flex row, so at 390px the "Log out Test Reader"
+button sat 30px past the right edge (measurable: `scrollWidth - clientWidth`), the links
+wrapped mid-word, and the member table stretched the page. A phone screenshot is the
+cheap test — `docs/assets/reader-queue.png` is the reference state. The CSS fix is a
+single `@media (max-width: 720px)` block at the end of `src/index.css`.
+
 **A half-loaded foreign key reads as broken data.** The Reading panel is two queries:
 `assignments` says *who* holds a piece, the `members` select says *what they are
 called*. Between the two replies the panel used to print **"Unknown reader"**, which

@@ -69,10 +69,12 @@ Seven tests are **skipped unless `app/.env.test` exists** (see `.env.test.exampl
 Those credentials are deliberately **not committed**, so CI runs the anonymous
 half only. Locally, filling in `.env.test` activates the rest.
 
-Last full run: **Nov 17, 2026** — `npm test` **66/66**, `npm run test:e2e`
-**17/17**, plus a read-only pass over the *deployed* URL (both demo accounts, the
-reader's blindness, the CSV download, and a refresh on a deep editor link),
-16/16 checks, no console errors.
+Last full run: **Nov 19, 2026** — `npm test` **112/112**, `npm run test:e2e`
+**19/19**, plus a read-only pass over the *deployed* URL (both demo accounts, the
+reader's blindness, the CSV download, a refresh on a deep editor link, and a
+phone-sized screenshot), 19/19 checks, no console errors beyond the Pages
+fallback's own 404. From the repository root, `./scripts/acceptance.sh` repeats the
+whole check — suites, live URLs, auth probes, keep-alive — and prints one verdict.
 
 ## Demo access
 

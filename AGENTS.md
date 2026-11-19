@@ -1,7 +1,7 @@
 # AGENTS.md
 
 *Read this first.* This is the onboarding/handoff file for any AI agent (or human)
-working in this repo. Last updated **Nov 18, 2026**.
+working in this repo. Last updated **Nov 19, 2026**.
 
 **This file holds current truth.** The long tail lives in `agent-docs/` so that the
 file an agent reads on every turn stays small:
@@ -42,14 +42,14 @@ page on Sep 23, 2026 and live in the app (`app/src/data/genres.ts`).
 
 ---
 
-## 2. Current status (Nov 18, 2026)
+## 2. Current status (Nov 19, 2026)
 
 **Live and working:** public submission form with browser-side metadata stripping,
 sign-up/sign-in with role-based landing, pending-reader approval, reader queue + detail
 page + ratings/notes/recusal, editor dashboard with the six-status decision workflow,
 Member Manager (roles, activate/deactivate, genre staffs, audit trail), reading
 assignments with staff fan-out, CSV export, password recovery, and demo access behind a
-build-time switch.
+build-time switch. The layout also holds at phone width since Nov 19.
 
 **URLs:** site https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/
 (including `/tutorial/`) · app at **`/app/`** under it:
@@ -59,10 +59,15 @@ org), which is why a custom domain is first on the §13 list.
 
 **Verified Nov 19, 2026** (read-only; nothing about the app changed to get these):
 `npm test` **112/112**, `npm run test:e2e` **19/19**, lint and `tsc -b` clean, all
-three live URLs 200, both auth probes landing on the Pages app, keep-alive green
-(last run Nov 16), and a 19-check browser pass over the deployed URL covering the
-Staffs column, the genre chips, the Reading panel, and the *Assigned to you* box.
-No console errors beyond the Pages fallback's own 404.
+three live URLs 200, both auth probes landing on the Pages app, and a 19-check browser
+pass over the deployed URL covering the Staffs column, the genre chips, the Reading
+panel, and the *Assigned to you* box. No console errors beyond the Pages fallback's own
+404. Also proved that day: the reader-approval policy is live in Postgres
+(`db_is_the_gate` → `true`), a password-reset mail **reached a real inbox and its link
+worked**, the two probe objects were deleted, and the layout holds at 390px.
+
+**Deadline week:** Nov 23 is the code freeze (docs only after), and the morning of
+Nov 24 is `./scripts/acceptance.sh` — one command, eight checks, one verdict.
 
 **Facts worth knowing before you trust a green light:**
 
@@ -147,6 +152,12 @@ list with owners.
   `curl -s "http://localhost:5173/src/pages/<File>.tsx?t=$(date +%s)" | grep <symbol>`.
   If the server is current but the browser is stale, **close the tab and open a fresh
   one** (plain Ctrl+Shift+R often isn't enough).
+- **The watcher misses `/src/index.css` too.** A CSS edit that changes nothing on
+  screen is usually the stale server, not a bad selector: restart by port and re-fetch
+  with `?t=$(date +%s)` before believing it. This bit during the Nov 19 mobile fix.
+- `nohup npm run dev &` from a shell tool call does not always survive; if the log stops
+  at `> vite` and nothing listens on 5173, start it with the tool's background mode
+  instead of retrying the same `nohup`.
 - Do **not** `pkill -f vite` from the tool (it matches the shell's own command line and
   hangs). Kill by port: `PID=$(ss -tlnp | grep 5173 | grep -oP 'pid=\K[0-9]+' | head -1);
   kill $PID`.
@@ -176,6 +187,7 @@ list with owners.
 | `app/supabase/tests/rls.test.sql` | Current | pgTAP policy tests (needs Docker) |
 | `app/supabase/functions/` | Planned | Edge Functions — upload routing, decision letters |
 | `docs/` | **Live site** | Jekyll site deployed to GitHub Pages; `index.md` links the app at `/app/` |
+| `scripts/acceptance.sh` | Current | The deadline check in one command: suites, live URLs, auth probes, keep-alive, one verdict (read-only) |
 | `docs/handoff.md` | Live | One page for the club: what they inherit, the pause ritual, the reset lever |
 | `docs/404.html` | Current | Pages fallback: bounces `/app/*` deep links back into the SPA |
 | `brainstorm.md`, `features.md`, `proposal*.md` | Historical | Original idea material (old stack; kept, not authoritative) |
@@ -308,10 +320,15 @@ deploy pipeline / frontier operations. Read it before touching auth, uploads, or
   a reader (`readerStatus()` in `statuses.ts`), and a test asserts the word never leaks.
 - **A demo reset must restore the demo.** `demo-reset.sql` re-seeds a rating, roles,
   genre staffs, and one assignment — a demo that only deletes looks broken.
+- **`demo-reset.sql` touches seed UUIDs only.** Non-seed rows are real people's data
+  (decision 23); an untidy demo beats a deleted manuscript.
 - **A new sign-up is a pending stranger**, and the UI has to say so rather than showing
   an empty queue.
 - **Genre staffs are labels, not a gate.** Nothing filters a queue on `staffs`.
 - **`status` and `decided_at` travel together** or Postgres refuses the write.
+- **The app is opened on phones.** Until Nov 19 there were no media queries at all and
+  the nav hung 30px off a 390px screen; check any new page at phone width, and use
+  `docs/assets/reader-queue.png` as the reference for what it should look like.
 - **A failed SQL paste rolls back and looks like nothing happened** — re-read the first
   error instead of pasting again.
 - **OWASP Top 10** is the security checklist; **broken access control** is this
@@ -323,14 +340,14 @@ deploy pipeline / frontier operations. Read it before touching auth, uploads, or
 
 Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 
-- **#5 — Require an editor to approve a reader before the queue opens.** *Phase 1
-  shipped Nov 17* (`20261117000000_reader_approval.sql`): `active` defaults to `false`,
-  the join policy refuses a self-insert claiming otherwise, the bootstrap chief branch
-  stays active, and `RequireAuth` explains the wait. **The policy half is proven:** the
-  `pg_policies` check was run Nov 19 and `db_is_the_gate` returned `true`, so a
-  hand-rolled sign-up cannot self-approve. Approval is the Chief Editor's alone by
-  decision 19 — which is also why an "any editor approves" variant would need the
-  `members` SELECT policy widened.
+- **#5 — Require an editor to approve a reader before the queue opens.** **CLOSED
+  Nov 19.** Phase 1 shipped Nov 17 (`20261117000000_reader_approval.sql`): `active`
+  defaults to `false`, the join policy refuses a self-insert claiming otherwise, the
+  bootstrap chief branch stays active, and `RequireAuth` explains the wait. The policy
+  was then pasted and proved: `pg_policies` reports `with_check` containing
+  `active = false` (`db_is_the_gate` → `true`), so a hand-rolled sign-up cannot
+  self-approve. Approval is the Chief Editor's alone by decision 19 — which is also why
+  an "any editor approves" variant would need the `members` SELECT policy widened.
 - **#6 — Reading assignments.** *Phase 1 shipped Nov 18*: `assignments`, the Reading
   panel on `/editor/:id`, staff fan-out, the *Assigned to you* box, and recusal surfacing
   as "needs reassignment". **Still open:** reading weeks/scheduling, per-reader workload
@@ -350,16 +367,18 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   impossible; deciding and notifying must stay separate acts because a decision can be
   undone.
 
-**Shared blocker (#5, #6, #7 phase 2):** an approval, an assignment, and an account
-deletion are all *writes*, and the suites are read-only. Decide the throwaway-account /
-cleanup strategy once and it unblocks all three.
+**Shared blocker (#6, #7 phase 2):** an assignment and an account deletion are both
+*writes*, and the suites are read-only. Decide the throwaway-account / cleanup strategy
+once and it unblocks both. (#5's approval was the third; it is done — the user clicked
+Activate, which is why the `member_audit` row names a real chief and not the demo.)
 
 **Loose ends that need the user's hands, not an agent's:** orphan test uploads in the
 `manuscripts` bucket (no delete policy, not even for the chief); one orphan auth user
 with no `members` row (needs a service-role key); and, after the deadline, scoping the
 Advisor role and author-reveal timing.
 
-Issues #1–#4 are closed; their narratives are in `agent-docs/history.md`.
+Issues **#1–#5 are closed**; their narratives are in `agent-docs/history.md`. What is
+left is #6's remainder, #7 phase 2, and #8.
 
 ---
 
@@ -391,6 +410,8 @@ Numbers are stable and cited from code — full reasoning in `agent-docs/decisio
 21. **A staff team is a label, not a permission** (Nov 17).
 22. **An assignment is one reader, one manuscript, and only the chief hands it out**
     (Nov 18).
+23. **A real submission outranks a tidy demo** (Nov 19) — "Among Us" stays `Accepted`
+    because a destructive cleanup of a real writer's row is worse than an untidy demo.
 
 ---
 
