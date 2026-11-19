@@ -57,10 +57,12 @@ https://hanover-cs461.github.io/senior-project-2026-2027-Alexis-Brockway/app/ ·
 project `qsynlsbltpnhzncpqerz`. The URL is repo-bound (it belongs to the `Hanover-CS461`
 org), which is why a custom domain is first on the §13 list.
 
-**Verified Nov 18, 2026** (read-only; nothing about the app changed to get these):
-`npm test` **112/112**, `npm run test:e2e` **19/19**, and a 14-check browser pass over
-the deployed URL covering the Staffs column, 16 genre chips, the Reading panel, and the
-*Assigned to you* box. No console errors on any page.
+**Verified Nov 19, 2026** (read-only; nothing about the app changed to get these):
+`npm test` **112/112**, `npm run test:e2e` **19/19**, lint and `tsc -b` clean, all
+three live URLs 200, both auth probes landing on the Pages app, keep-alive green
+(last run Nov 16), and a 19-check browser pass over the deployed URL covering the
+Staffs column, the genre chips, the Reading panel, and the *Assigned to you* box.
+No console errors beyond the Pages fallback's own 404.
 
 **Facts worth knowing before you trust a green light:**
 

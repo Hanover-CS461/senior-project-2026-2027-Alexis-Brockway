@@ -1,4 +1,4 @@
-# Project status — Nov 18, 2026
+# Project status — Nov 19, 2026
 
 Everything in one place: what is live, what was verified and when, what shipped
 today, and what is left. `AGENTS.md` is the short handoff for agents (state,
@@ -34,6 +34,37 @@ after the deadline (see "What is left").
 
 ---
 
+## Verified on Nov 19 (deadline pass — suites, live probes, browser walkthrough)
+
+Run from this machine, read-only; nothing about the app changed to get these.
+
+| Check | Result |
+|---|---|
+| `npm test` (unit + live anon-RLS) | **112/112**, 12 files, 0 skips |
+| `npm run test:e2e` (Chromium) | **19/19**, 0 skips |
+| `npm run lint` / `npx tsc -b` | exit 0 (the same warnings only) / clean |
+| Live site, `/app/`, `/tutorial/` | **200 / 200 / 200** |
+| Auth probe with `redirect_to` | `location:` → the Pages app, `#error=otp_expired` ✅ |
+| Auth probe without `redirect_to` | `location:` → the Pages app, same `otp_expired` ✅ |
+| Keep-alive cron (last run) | **success**, Nov 16 14:31 UTC — next due today |
+| Browser pass over the **deployed** app | **19/19**, no errors beyond the expected fallback 404 |
+
+What the deployed walkthrough proved (signed in through the published demo buttons):
+
+- Chief lands on `/editor`; the **Staff** tab shows the Staffs column, 32 genre
+  chip buttons (16 people × 2 states), and "Who's on each staff".
+- Six of the seven queue rows open; the **Reading** panel renders on all of them,
+  *The Last Ferry* still carries its one assignment with a live state and a
+  populated reader picker.
+- A deep `/app/editor/<id>` URL survives the Pages fallback unchanged.
+- Reader lands on `/reader` and sees **Assigned to you** above *The whole queue*;
+  **no seed author name appears** on the queue or on a submission page; the
+  manuscript/notes/score controls render; `/editor` shows the denial with the
+  "Go to your reader queue" link (the door is a message, not a redirect).
+- The only console noise is the Pages fallback's own 404 — the hack working.
+
+---
+
 ## Verified on Nov 18 (nothing assumed)
 
 | Check | Result |
@@ -63,28 +94,32 @@ file boundary holds.
 
 ---
 
-## What the live project actually holds (probed Nov 17, read-only)
+## What the live project actually holds (re-probed Nov 19, read-only)
 
 Signing in as the published demo Chief and reading the rows turns up more than
-the seed file describes, and none of it is what a visitor should see:
+the seed file describes:
 
-- **Seven submissions, not six.** One arrived **Nov 17 through the public form**
-  from a Hanover student address, and it currently reads `Accepted`. It is not
-  sample data and must not be deleted casually — a real writer's manuscript looks
-  exactly like junk from the outside.
-- **Two seed statuses have drifted**: *The Last Ferry* is `Rejected` and
-  *Porcelain* is `Received`, where the seed says `In review` and `Shortlist`.
-- **Six member rows**: the two demo accounts, plus personal addresses — one of
-  which holds **`chief_editor`**. That one is your own second account (confirmed
-  Nov 17), so it stays.
-- **A student signed up and is an active `reader` today**, so unpublished work is
-  already visible to someone outside the club. That is issue #5, live.
-- Three ratings, one of them carrying the notes `hello notes`.
+- **Seven submissions, not six.** The seventh is **"Among Us" (Poetry)**, arrived
+  **Nov 17 through the public form**, and currently reads **`Accepted`**. It has an
+  author row, so it is real data — it must not be deleted or reset casually, and
+  the decision on it is somebody's, not the reset script's.
+- **Seed statuses are back where the seed says.** The Nov 17 drift was reverted by
+  `demo-reset.sql`: *The Last Ferry* is `In review`, *Porcelain* is `Shortlist`.
+- **Eight member rows**, of which **two are pending readers**: one a
+  **`hanover.edu` student address**, one a `gmail.com` address. The approval gate
+  is doing its job, and it now has real people waiting on it. (The `gmail` one
+  looks like a duplicate of an active reader whose address was typed with a typo —
+  worth a glance, not a panic.)
+- **Three rows hold `chief_editor`**: the published demo account, the owner's own
+  second account (confirmed Nov 17), and one more personal address that was **not**
+  in the Nov 17 note. Anyone with that role can read `authors`, so confirm whose it
+  is before a real reading period — that is #7's territory, not a new issue.
+- **Two ratings**, and **one assignment** — *The Last Ferry*, still the seeded one.
 
 RLS still holds — a reader sees no author identity — so this is not a blind-review
-breach. It is the demo looking messy, plus the two risks #5 and #7 describe
-happening in miniature. `app/supabase/demo-reset.sql` is the undo for the six
-seeded pieces; it deliberately leaves the seventh alone.
+breach. It is the demo looking messy, plus the risks #5 and #7 describe happening
+in miniature. `app/supabase/demo-reset.sql` is the undo for the six seeded pieces;
+it deliberately leaves the seventh alone.
 
 ---
 
