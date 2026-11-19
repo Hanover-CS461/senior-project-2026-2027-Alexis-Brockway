@@ -71,9 +71,11 @@ editor and it goes back to how it looked on day one.
   Chief Editor activates it from the Staff tab — that is the approval step, and
   it lives in the database, not the page. Invite codes would replace "sign up,
   then wait" with "join with a code", which is friendlier but not safer.
-- **Real email delivery.** Password reset links point at the right place, but
-  they ride Supabase's built-in demo mailer, which is rate-limited and often
-  lands in spam. Production mail belongs on Resend.
+- **Real email delivery.** Password reset links point at the right place, and on
+  Nov 19 a reset mail actually reached a real inbox and its link worked. But they
+  ride Supabase's built-in demo mailer, which is rate-limited and often lands in
+  spam — fine for a demo, not for a reading period. Production mail belongs on
+  Resend.
 - **Reader names next to notes.** Notes reach editors unattributed, because only
   the Chief Editor may read the staff table.
 

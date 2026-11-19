@@ -74,14 +74,18 @@ No console errors beyond the Pages fallback's own 404.
   non-seed row as junk. Keep personal addresses out of every doc in this repo.
 - **The published demo Chief can read `authors`**, so demo access is a gate before a
   real reading period, not a cosmetic cleanup (issue #7, phase 2: delete the accounts).
-- **Delivery of auth email is unproven.** Routing is proven (all three probes land on
-  the app); the built-in mailer is a demo, not a mail service.
+- **Auth email delivery is proven once, volume is not.** On Nov 19 a password-reset
+  mail reached a real Gmail inbox and its link opened the change-password form on the
+  deployed app; routing had already been proven. The sender is still Supabase's
+  rate-limited demo mailer, so this is proof the flow works, not a mail service for a
+  reading period — Resend (#8) is still the answer at volume.
 
-**Open, and only a human can close it:** one real inbox is needed to prove auth mail is
-delivered; the #7 phase-2 account deletion is pending. The reader-approval
-`pg_policies` check was **run Nov 19 and passed** (`db_is_the_gate` → `true`), so the
-database is the gate, not just the app, and the two documented probe objects were
-**deleted Nov 19 and proved from outside**. `STATUS.md` keeps the live list with owners.
+**Open, and only a human can close it:** the #7 phase-2 account deletion is pending.
+The reader-approval `pg_policies` check was **run Nov 19 and passed**
+(`db_is_the_gate` → `true`), so the database is the gate, not just the app; the two
+documented probe objects were **deleted Nov 19 and proved from outside**; and auth mail
+was **proven to deliver** to a real inbox whose link worked. `STATUS.md` keeps the live
+list with owners.
 
 ---
 
@@ -288,9 +292,10 @@ deploy pipeline / frontier operations. Read it before touching auth, uploads, or
    UPDATE on `storage.objects`, so an upsert 403s.
 7. **`manuscript_path` never carries the author's filename.** It is
    `<uuid>/manuscript.<ext>`; readers can read `submissions`.
-8. **Auth email is a demo mailer.** Rate-limited, spam-prone, and unproven for delivery;
-   the `@example.com` accounts have no inbox, so the round trip is checked by hand. The
-   emergency lever is the SQL password reset in `gotchas.md` §2.
+8. **Auth email is a demo mailer.** Rate-limited and spam-prone — delivery is proven
+   (Nov 19, one real inbox), volume is not; the `@example.com` accounts have no inbox,
+   so the round trip is checked by hand. The emergency lever is the SQL password reset in
+   `gotchas.md` §2.
 
 ### Other conventions worth repeating here
 
@@ -337,7 +342,9 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   CASCADE`, so audit rows naming a demo user must be removed first.
 - **#8 — Send real email.** Phase 0 is Resend as Supabase Auth's SMTP (the
   `[auth.email.smtp]` block is already commented into `config.toml`) — blocked on the
-  club's DNS for SPF/DKIM. Phase 1 is decision letters via an `email_outbox` table
+  club's DNS for SPF/DKIM. The built-in mailer *does* deliver (proved Nov 19 to one real
+  inbox, link and all), so this is now about volume and spam placement rather than a
+  broken flow. Phase 1 is decision letters via an `email_outbox` table
   drained by an Edge Function, with `unique (submission_id, kind)` so a double-send is
   impossible; deciding and notifying must stay separate acts because a decision can be
   undone.
@@ -348,8 +355,8 @@ cleanup strategy once and it unblocks all three.
 
 **Loose ends that need the user's hands, not an agent's:** orphan test uploads in the
 `manuscripts` bucket (no delete policy, not even for the chief); one orphan auth user
-with no `members` row (needs a service-role key); one real inbox to prove auth mail
-delivers; and, after the deadline, scoping the Advisor role and author-reveal timing.
+with no `members` row (needs a service-role key); and, after the deadline, scoping the
+Advisor role and author-reveal timing.
 
 Issues #1–#4 are closed; their narratives are in `agent-docs/history.md`.
 

@@ -129,8 +129,10 @@ many reset emails") and routinely lands in spam. It is enough to prove the flow,
 enough for a real reading period; production auth mail belongs on Resend like the
 decision letters. It also means the recovery flow **cannot be tested with the
 `@example.com` demo accounts** — no inbox exists. Create an account with a real
-address to prove delivery, and reset that account's password. **Delivery is still
-unproven** (routing is proven; delivery is not).
+address to prove delivery, and reset that account's password. **Delivery was proven
+Nov 19, 2026:** a reset mail reached a real Gmail inbox and its link opened the
+change-password form on the deployed app. Routing *and* one delivery are now facts;
+the rate limit and spam placement are what still make this a demo mailer.
 
 **Locked out and the reset email is dead? Set the password in SQL.** The SQL editor
 runs as `postgres`, so this needs no service key and no email:

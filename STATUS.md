@@ -49,6 +49,8 @@ Run from this machine, read-only; nothing about the app changed to get these.
 | Keep-alive cron (last run) | **success**, Nov 16 14:31 UTC — next due today |
 | Browser pass over the **deployed** app | **19/19**, no errors beyond the expected fallback 404 |
 | Reader-approval policy (`pg_policies`, pasted Nov 19) | `db_is_the_gate` → **`true`** — the database, not just the app, refuses a self-approving sign-up |
+| Password-reset email delivery (Nov 19) | **arrived in a real inbox, link opened the change-password form** ✅ |
+| Storage probe objects (Nov 19) | `probe.txt` and `samples/probe-test.txt` **deleted**, proved with the chief's bucket listing; six seed manuscripts intact |
 
 What the deployed walkthrough proved (signed in through the published demo buttons):
 
@@ -192,6 +194,8 @@ Nov 17 — the deadline-week risks:
 - **Issue #7** — take the published demo logins out before a real reading period.
   *Phase 1 built (the build-time switch); deleting the accounts is the gate.*
 - **Issue #8** — send real email (auth mail off the demo mailer, then decision letters).
+  *Delivery is proved (Nov 19: a reset mail arrived and its link worked); volume and
+  spam placement still belong on Resend.*
 
 ---
 
@@ -232,27 +236,22 @@ history.
 
 ### Needs your hands (four small things, no code)
 
-> **Phase 0 and Phase 1 are done (Nov 19).** The reader-approval migration is applied
-> and proved (`db_is_the_gate` → `true`). The Hanover student reader was approved, and
-> the approval is visible in `member_audit`. "Among Us" stays `Accepted` on purpose —
-> it is the end-to-end proof, not an accident.
+> **Phase 0, Phase 1 and the email proof are done (Nov 19).** The reader-approval
+> migration is applied and proved (`db_is_the_gate` → `true`). The Hanover student
+> reader was approved, and the approval is visible in `member_audit`. "Among Us" stays
+> `Accepted` on purpose — it is the end-to-end proof, not an accident. The probe objects
+> are deleted, and a password-reset mail **reached a real inbox and its link worked**.
 
-1. **Prove email delivery once** — at the live `/login`, use **Forgot password?** with
-   a real inbox that belongs to an **existing** account (your chief account), not a
-   fresh sign-up: a new account leaves a `members` row that no one can delete. Routing
-   is proven; **delivery is not**. If the mail lands, the caveat comes out of the
-   README; if it doesn't, that is the real blocker found with five days to spare. The
-   mailer is rate-limited — one attempt, then wait.
-2. **Open the app on a phone, on cellular** — every check so far ran from one
+1. **Open the app on a phone, on cellular** — every check so far ran from one
    machine. Thirty seconds, and it is the only honest proof of "public".
-3. **Take one screenshot of the reader view** with no author name on it — the
+2. **Take one screenshot of the reader view** with no author name on it — the
    artifact that makes the security claim legible in a demo.
 
 ### Open issues, in the order I would defend
 
 | Order | Issue | Why here |
 |---|---|---|
-| 1 | **#8 phase 0** — Resend as Supabase Auth's SMTP | One day, no app code, turns password recovery from "routes correctly" into "delivers" |
+| 1 | **#8 phase 0** — Resend as Supabase Auth's SMTP | One day, no app code, and the only thing between "a reset mail arrived once" and "mail survives a whole reading period" |
 | 2 | **#7 phase 2** — delete the published demo logins | **A gate, not a date:** no published credential may exist when the first real manuscript arrives. The switch (phase 1) is done; the accounts still exist |
 | 3 | **#5** — approve readers | **Closed Nov 19.** The migration is applied and the `pg_policies` check now returns `true`: the database refuses a self-approving sign-up |
 | 4 | **#6 remainder** — reading weeks and workload counts | Phase 1 (assignments) is built and live; weeks are a scheduling feature, not a security one; the decided model is recorded in `AGENTS.md` §9 #22 |

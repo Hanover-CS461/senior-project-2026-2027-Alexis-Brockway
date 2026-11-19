@@ -50,6 +50,18 @@ change, which is why the re-read matters). **"Among Us" stays `Accepted` on purp
 it is the end-to-end proof that the public form, the author row, and the decision
 workflow work on real data, and no reset script may wipe it.
 
+**The two documented probe objects were deleted** from the dashboard and the deletion
+was proved with the chief's bucket listing; all six seed manuscripts survived. The same
+listing turned up clutter the handoff did not know about — `curl-test/`,
+`node-test-1790263302941/`, and seven UUID folders of test uploads no submission
+references (only `a0093e54-…` is real: *Among Us*).
+
+**Auth mail delivery was proved for the first time.** A password-reset request from the
+live `/login`, using an existing chief account with a real inbox, **arrived** and the
+link opened the change-password form. Routing had been proven before; delivery had not.
+The caveat is now volume — the sender is still Supabase's shared, rate-limited demo
+mailer.
+
 ---
 
 ## Nov 18, 2026 — reading assignments (issue #6, phase 1)

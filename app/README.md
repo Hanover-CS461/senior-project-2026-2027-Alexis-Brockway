@@ -140,9 +140,10 @@ maintain after graduation.
   scores file carries the notes but no reader column.
 - Decision letters and email (Resend) are not built.
 - Auth email rides Supabase's built-in demo mailer, which is rate-limited to a
-  handful per hour and often lands in spam. Password recovery *routes* correctly — a
-  reset link always comes back to the deployed app, not to `localhost` — but delivery
-  to a real inbox has not been verified. Production auth mail belongs on Resend, like
+  handful per hour and often lands in spam. **Delivery was proven on Nov 19, 2026:** a
+  password-reset mail reached a real Gmail inbox and its link opened the change-password
+  form on the deployed app. What is still unproven is *volume* — a shared sender is not
+  a mail service for a reading period, so production auth mail belongs on Resend, like
   the decision letters will.
 - Sign-up is open. Anyone who finds the sign-in page can create an account, and
   they join as a Reader; there are no invite codes yet. The boundary that still holds
