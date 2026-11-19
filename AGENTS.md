@@ -77,11 +77,11 @@ No console errors beyond the Pages fallback's own 404.
 - **Delivery of auth email is unproven.** Routing is proven (all three probes land on
   the app); the built-in mailer is a demo, not a mail service.
 
-**Open, and only a human can close it:** two stray objects sit in the live Storage
-bucket; one real inbox is needed to prove auth mail is delivered; the #7 phase-2 account
-deletion is pending. The reader-approval `pg_policies` check was **run Nov 19 and passed**
-(`db_is_the_gate` → `true`), so the database is the gate, not just the app. `STATUS.md`
-keeps the live list with owners.
+**Open, and only a human can close it:** one real inbox is needed to prove auth mail is
+delivered; the #7 phase-2 account deletion is pending. The reader-approval
+`pg_policies` check was **run Nov 19 and passed** (`db_is_the_gate` → `true`), so the
+database is the gate, not just the app, and the two documented probe objects were
+**deleted Nov 19 and proved from outside**. `STATUS.md` keeps the live list with owners.
 
 ---
 
@@ -346,11 +346,10 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 deletion are all *writes*, and the suites are read-only. Decide the throwaway-account /
 cleanup strategy once and it unblocks all three.
 
-**Loose ends that need the user's hands, not an agent's:** the stray
-`manuscripts/probe.txt` and `manuscripts/samples/probe-test.txt` objects (anon cannot
-delete); one orphan auth user with no `members` row (needs a service-role key); one real
-inbox to prove auth mail delivers; and, after the deadline, scoping the Advisor role and
-author-reveal timing.
+**Loose ends that need the user's hands, not an agent's:** orphan test uploads in the
+`manuscripts` bucket (no delete policy, not even for the chief); one orphan auth user
+with no `members` row (needs a service-role key); one real inbox to prove auth mail
+delivers; and, after the deadline, scoping the Advisor role and author-reveal timing.
 
 Issues #1–#4 are closed; their narratives are in `agent-docs/history.md`.
 

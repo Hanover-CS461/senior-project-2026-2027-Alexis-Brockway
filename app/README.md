@@ -148,11 +148,12 @@ maintain after graduation.
   they join as a Reader; there are no invite codes yet. The boundary that still holds
   is the one that matters: a Reader cannot read the `authors` table, so a stranger
   with an account sees manuscripts, never names.
-- Two stray probe objects sit in the `manuscripts` bucket — `manuscripts/probe.txt`
-  and `manuscripts/samples/probe-test.txt` — left by the October upload tests. They
-  hold no author data, and the app cannot delete them (anonymous visitors have an
-  insert policy on Storage and no delete policy), so removing them needs the Supabase
-  dashboard or a service-role call.
+- **The probe objects are gone; orphan test uploads are not.** `manuscripts/probe.txt`
+  and `manuscripts/samples/probe-test.txt` were deleted Nov 19 and verified with the
+  chief's bucket listing. What is left is inert clutter: `curl-test/`,
+  `node-test-1790263302941/`, and seven UUID folders of test uploads no submission
+  references. The app cannot delete them (no delete policy, even for the chief), so
+  removing them needs the dashboard or a service-role call — after the deadline.
 - The free tier pauses the database after about a week of inactivity, and a paused
   project is a broken queue even though the page still loads.
   `.github/workflows/keep-alive.yml` pings it every three days for exactly that reason:

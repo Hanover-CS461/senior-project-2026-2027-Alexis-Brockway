@@ -248,11 +248,14 @@ the upload path, keep the name generic.
 403 "violates row-level security". A plain
 `POST /storage/v1/object/manuscripts/<path>` works.
 
-**Two stray objects are still in the live bucket:** `manuscripts/probe.txt` (Oct 20)
-and `manuscripts/samples/probe-test.txt` (Oct 29). Anon can upload by policy but
-cannot delete (403), so they need the dashboard, `supabase storage rm`, or a
-service-role call. Inert — no author data — but they should not be in a project
-shown to a grader. **Still open.**
+**The two documented stray objects are gone (Nov 19).** `manuscripts/probe.txt` and
+`manuscripts/samples/probe-test.txt` were deleted from the dashboard and the deletion
+was proved from outside with the chief's own bucket listing; all six seed manuscripts
+survived. What remains is clutter of a different kind: `curl-test/`,
+`node-test-1790263302941/`, and **seven UUID folders of orphaned test uploads**
+(`testForProject.docx`, `Health & Safety Checks Guide.docx`) that no submission row
+references. Only `a0093e54-…/manuscript.docx` is real — it is the *Among Us* upload.
+Anon still cannot list or download any of it. **Post-deadline cleanup.**
 
 ---
 

@@ -237,18 +237,15 @@ history.
 > the approval is visible in `member_audit`. "Among Us" stays `Accepted` on purpose —
 > it is the end-to-end proof, not an accident.
 
-1. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
-   `probe.txt`, and `manuscripts/samples` → `probe-test.txt`. The app cannot: anon
-   has an insert policy on Storage and no delete policy, and **even the chief has no
-   delete policy** — this one is dashboard-or-service-key only. Inert, but visible to
-   anyone browsing the bucket.
-2. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
-   then walk `/forgot-password`. Routing is proven; **delivery is not**. If it
-   lands, a caveat comes out of the README. If it doesn't, that is the real
-   blocker found with a week to spare.
-3. **Open the app on a phone, on cellular** — every check so far ran from one
+1. **Prove email delivery once** — at the live `/login`, use **Forgot password?** with
+   a real inbox that belongs to an **existing** account (your chief account), not a
+   fresh sign-up: a new account leaves a `members` row that no one can delete. Routing
+   is proven; **delivery is not**. If the mail lands, the caveat comes out of the
+   README; if it doesn't, that is the real blocker found with five days to spare. The
+   mailer is rate-limited — one attempt, then wait.
+2. **Open the app on a phone, on cellular** — every check so far ran from one
    machine. Thirty seconds, and it is the only honest proof of "public".
-4. **Take one screenshot of the reader view** with no author name on it — the
+3. **Take one screenshot of the reader view** with no author name on it — the
    artifact that makes the security claim legible in a demo.
 
 ### Open issues, in the order I would defend
@@ -276,7 +273,8 @@ history.
 
 - **DNS on `kenningsliteraryjournal.com`** — the custom domain, Resend's SPF/DKIM,
   and therefore working mail all sit behind the club's DNS access.
-- **Deleting the stray storage objects** — needs the dashboard or a service key.
+- **Deleting the orphan storage uploads** — needs the dashboard or a service key; the
+  two documented probes are already gone.
 
 ---
 
