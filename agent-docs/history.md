@@ -39,10 +39,16 @@ Lesson worth keeping: the first read is what makes this provable. A dashboard
 "Success" would not have told us *which* policy text was in place.
 
 **Live-data truth, re-probed:** seven submissions (*Among Us* is the Nov 17 public
-one, `Accepted`), eight members with **two pending readers** (one Hanover student
-address; one a typo duplicate of an active reader), three `chief_editor` rows (the
-demo, the owner's, and one that was not in the Nov 17 note), two ratings, one
-assignment on *The Last Ferry*.
+one, `Accepted`), eight members with **one pending** (the owner's own second signup),
+three `chief_editor` rows (the demo, the owner's, and one that was not in the Nov 17
+note), two ratings, one assignment on *The Last Ferry*.
+
+**Phase 1 decisions, made that morning and proved from outside.** The Hanover student
+reader was approved in the Staff tab (`member_audit`: `reactivate`, `false → true`,
+08:50 UTC — the first outside read beat the click by a minute and correctly showed no
+change, which is why the re-read matters). **"Among Us" stays `Accepted` on purpose**:
+it is the end-to-end proof that the public form, the author row, and the decision
+workflow work on real data, and no reset script may wipe it.
 
 ---
 

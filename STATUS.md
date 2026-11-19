@@ -101,16 +101,16 @@ Signing in as the published demo Chief and reading the rows turns up more than
 the seed file describes:
 
 - **Seven submissions, not six.** The seventh is **"Among Us" (Poetry)**, arrived
-  **Nov 17 through the public form**, and currently reads **`Accepted`**. It has an
-  author row, so it is real data — it must not be deleted or reset casually, and
-  the decision on it is somebody's, not the reset script's.
+  **Nov 17 through the public form**, and reads **`Accepted`**. **Decided Nov 19: keep
+  it exactly as it is** — it is the end-to-end proof that the public form, the author
+  row, and the decision workflow all work on real data. The reset script leaves it
+  alone.
 - **Seed statuses are back where the seed says.** The Nov 17 drift was reverted by
   `demo-reset.sql`: *The Last Ferry* is `In review`, *Porcelain* is `Shortlist`.
-- **Eight member rows**, of which **two are pending readers**: one a
-  **`hanover.edu` student address**, one a `gmail.com` address. The approval gate
-  is doing its job, and it now has real people waiting on it. (The `gmail` one
-  looks like a duplicate of an active reader whose address was typed with a typo —
-  worth a glance, not a panic.)
+- **Eight member rows, one pending.** The pending one is the owner's own second signup
+  (`abrockwaya@gmail.com`) — #7's cleanup, not a stranger. The `hanover.edu` student
+  address that was waiting was **approved Nov 19**, and proved from outside:
+  `member_audit` shows `reactivate`, `false → true`, 08:50 UTC.
 - **Three rows hold `chief_editor`**: the published demo account, the owner's own
   second account (confirmed Nov 17), and one more personal address that was **not**
   in the Nov 17 note. Anyone with that role can read `authors`, so confirm whose it
@@ -232,25 +232,24 @@ history.
 
 ### Needs your hands (four small things, no code)
 
-> **Phase 0 is done (Nov 19).** The reader-approval migration was pasted and proved:
-> `db_is_the_gate` returned `true`, so the policy — not just the app — refuses a
-> self-approving sign-up. Nothing left to check here.
+> **Phase 0 and Phase 1 are done (Nov 19).** The reader-approval migration is applied
+> and proved (`db_is_the_gate` → `true`). The Hanover student reader was approved, and
+> the approval is visible in `member_audit`. "Among Us" stays `Accepted` on purpose —
+> it is the end-to-end proof, not an accident.
 
-1. **Decide what happens to the seventh submission** (the Nov 17 one from a Hanover
-   student, now `Accepted`). It is not sample data, so I won't touch it.
-2. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
+1. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
    `probe.txt`, and `manuscripts/samples` → `probe-test.txt`. The app cannot: anon
-   has an insert policy on Storage and no delete policy. Inert, but visible to
+   has an insert policy on Storage and no delete policy, and **even the chief has no
+   delete policy** — this one is dashboard-or-service-key only. Inert, but visible to
    anyone browsing the bucket.
-3. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
+2. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
    then walk `/forgot-password`. Routing is proven; **delivery is not**. If it
    lands, a caveat comes out of the README. If it doesn't, that is the real
    blocker found with a week to spare.
-4. **Open the app on a phone, on cellular** — every check so far ran from one
+3. **Open the app on a phone, on cellular** — every check so far ran from one
    machine. Thirty seconds, and it is the only honest proof of "public".
-5. **Decide the two pending readers** — one Hanover student address and one that
-   looks like a typo duplicate of an active reader. Activating is a real editorial
-   decision: it opens unpublished work to them.
+4. **Take one screenshot of the reader view** with no author name on it — the
+   artifact that makes the security claim legible in a demo.
 
 ### Open issues, in the order I would defend
 
