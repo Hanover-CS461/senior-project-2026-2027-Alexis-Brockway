@@ -77,9 +77,10 @@ No console errors beyond the Pages fallback's own 404.
 - **Delivery of auth email is unproven.** Routing is proven (all three probes land on
   the app); the built-in mailer is a demo, not a mail service.
 
-**Open, and only a human can close it:** the reader-approval `pg_policies` check has not
-been run; two stray objects sit in the live Storage bucket; one real inbox is needed to
-prove auth mail is delivered; the #7 phase-2 account deletion is pending. `STATUS.md`
+**Open, and only a human can close it:** two stray objects sit in the live Storage
+bucket; one real inbox is needed to prove auth mail is delivered; the #7 phase-2 account
+deletion is pending. The reader-approval `pg_policies` check was **run Nov 19 and passed**
+(`db_is_the_gate` → `true`), so the database is the gate, not just the app. `STATUS.md`
 keeps the live list with owners.
 
 ---
@@ -319,8 +320,9 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 - **#5 — Require an editor to approve a reader before the queue opens.** *Phase 1
   shipped Nov 17* (`20261117000000_reader_approval.sql`): `active` defaults to `false`,
   the join policy refuses a self-insert claiming otherwise, the bootstrap chief branch
-  stays active, and `RequireAuth` explains the wait. **Still open:** the migration's
-  `pg_policies` proof has not been run, and approval is the Chief Editor's alone by
+  stays active, and `RequireAuth` explains the wait. **The policy half is proven:** the
+  `pg_policies` check was run Nov 19 and `db_is_the_gate` returned `true`, so a
+  hand-rolled sign-up cannot self-approve. Approval is the Chief Editor's alone by
   decision 19 — which is also why an "any editor approves" variant would need the
   `members` SELECT policy widened.
 - **#6 — Reading assignments.** *Phase 1 shipped Nov 18*: `assignments`, the Reading
@@ -344,11 +346,11 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
 deletion are all *writes*, and the suites are read-only. Decide the throwaway-account /
 cleanup strategy once and it unblocks all three.
 
-**Loose ends that need the user's hands, not an agent's:** the reader-approval
-`pg_policies` check; the stray `manuscripts/probe.txt` and
-`manuscripts/samples/probe-test.txt` objects (anon cannot delete); one orphan auth user
-with no `members` row (needs a service-role key); one real inbox to prove auth mail
-delivers; and, after the deadline, scoping the Advisor role and author-reveal timing.
+**Loose ends that need the user's hands, not an agent's:** the stray
+`manuscripts/probe.txt` and `manuscripts/samples/probe-test.txt` objects (anon cannot
+delete); one orphan auth user with no `members` row (needs a service-role key); one real
+inbox to prove auth mail delivers; and, after the deadline, scoping the Advisor role and
+author-reveal timing.
 
 Issues #1–#4 are closed; their narratives are in `agent-docs/history.md`.
 

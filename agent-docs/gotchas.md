@@ -60,6 +60,10 @@ where tablename = 'members' and policyname = 'members join once, first as chief'
 
 `with_check` must contain `active = false`. Same class of lesson as the auth-URL
 probes: a change the dashboard reports as saved is not saved until something outside
+
+**Resolved Nov 19:** the first read showed the old policy, the migration was pasted,
+and the check then returned `true` (`with_check ~ 'active\s*=\s*false'`). The query
+above still works; the regex form is easier to read as a single word.
 the dashboard says so. **Status: this query has not been run yet.**
 
 **A paused project drops its DNS record — that is not deletion.** On Oct 27 the

@@ -48,6 +48,7 @@ Run from this machine, read-only; nothing about the app changed to get these.
 | Auth probe without `redirect_to` | `location:` → the Pages app, same `otp_expired` ✅ |
 | Keep-alive cron (last run) | **success**, Nov 16 14:31 UTC — next due today |
 | Browser pass over the **deployed** app | **19/19**, no errors beyond the expected fallback 404 |
+| Reader-approval policy (`pg_policies`, pasted Nov 19) | `db_is_the_gate` → **`true`** — the database, not just the app, refuses a self-approving sign-up |
 
 What the deployed walkthrough proved (signed in through the published demo buttons):
 
@@ -184,7 +185,8 @@ Nov 17 — the deadline-week risks:
   both demo logins back in their roles, and since Nov 18 restores staffs and one
   assignment. **Executed and proved** — see the Nov 17 entry above.
 - **Issue #5** — require an editor to approve a reader before the queue opens.
-  *Phase 1 built; the policy check is in "What is left".*
+  *Done and proved Nov 19: the policy is applied, and the `pg_policies` check returns
+  `true`, so the database itself refuses a self-approving sign-up.*
 - **Issue #6** — let editors assign submissions to readers. *Phase 1 built Nov 18; the
   reading-week half is still open.*
 - **Issue #7** — take the published demo logins out before a real reading period.
@@ -230,30 +232,25 @@ history.
 
 ### Needs your hands (four small things, no code)
 
-1. **Confirm the reader-approval migration landed.** The reset is done; this one
-   leaves no readable trace, so paste this in the SQL editor and read the answer:
+> **Phase 0 is done (Nov 19).** The reader-approval migration was pasted and proved:
+> `db_is_the_gate` returned `true`, so the policy — not just the app — refuses a
+> self-approving sign-up. Nothing left to check here.
 
-   ```sql
-   select policyname, with_check
-   from pg_policies
-   where tablename = 'members' and policyname = 'members join once, first as chief';
-   ```
-
-   `with_check` must contain `active = false`. If it doesn't, the app half is still
-   gating new sign-ups, but a hand-rolled request could approve itself — paste
-   `app/supabase/migrations/20261117000000_reader_approval.sql`.
-2. **Decide what happens to the seventh submission** (the Nov 17 one from a Hanover
+1. **Decide what happens to the seventh submission** (the Nov 17 one from a Hanover
    student, now `Accepted`). It is not sample data, so I won't touch it.
-3. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
+2. **Delete two probe files** — Supabase dashboard → Storage → `manuscripts` →
    `probe.txt`, and `manuscripts/samples` → `probe-test.txt`. The app cannot: anon
    has an insert policy on Storage and no delete policy. Inert, but visible to
    anyone browsing the bucket.
-4. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
+3. **Prove email delivery once** — sign up at the live `/login` with a real inbox,
    then walk `/forgot-password`. Routing is proven; **delivery is not**. If it
    lands, a caveat comes out of the README. If it doesn't, that is the real
    blocker found with a week to spare.
-5. **Open the app on a phone, on cellular** — every check so far ran from one
+4. **Open the app on a phone, on cellular** — every check so far ran from one
    machine. Thirty seconds, and it is the only honest proof of "public".
+5. **Decide the two pending readers** — one Hanover student address and one that
+   looks like a typo duplicate of an active reader. Activating is a real editorial
+   decision: it opens unpublished work to them.
 
 ### Open issues, in the order I would defend
 
@@ -261,7 +258,7 @@ history.
 |---|---|---|
 | 1 | **#8 phase 0** — Resend as Supabase Auth's SMTP | One day, no app code, turns password recovery from "routes correctly" into "delivers" |
 | 2 | **#7 phase 2** — delete the published demo logins | **A gate, not a date:** no published credential may exist when the first real manuscript arrives. The switch (phase 1) is done; the accounts still exist |
-| 3 | **#5** — approve readers | **Built and deployed.** New sign-ups are gated today; one SQL check confirms the policy half |
+| 3 | **#5** — approve readers | **Closed Nov 19.** The migration is applied and the `pg_policies` check now returns `true`: the database refuses a self-approving sign-up |
 | 4 | **#6 remainder** — reading weeks and workload counts | Phase 1 (assignments) is built and live; weeks are a scheduling feature, not a security one; the decided model is recorded in `AGENTS.md` §9 #22 |
 
 ### Decisions waiting on you

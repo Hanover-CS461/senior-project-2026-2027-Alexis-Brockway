@@ -14,6 +14,38 @@ Two rules for keeping this useful:
 
 ---
 
+## Nov 19, 2026 — deadline verification pass, and #5's policy proof
+
+**The full pass, read-only, on the deployed app:** `npm test` 112/112 ·
+`npm run test:e2e` 19/19 · lint and `tsc -b` clean · site, `/app/` and `/tutorial/`
+all 200 · both auth probes land on the Pages app · keep-alive green (Nov 16) · a
+19-check Playwright walkthrough of the **deployed** URL (Chief: Staff tab, chips,
+Reading panel, deep link; Reader: *Assigned to you*, the whole queue, no author
+name, scoring controls, editor door) with no console errors beyond the fallback's
+own 404. `VITE_DEMO_MODE=false npm run build` still greps **0** matches for the
+demo credentials.
+
+**#5's missing half was closed by the user, in SQL, and proved.** The
+`pg_policies` read showed the old policy (no `active = false`), so the migration
+was pasted and the one-boolean check then returned `true`:
+
+```sql
+select with_check ~ 'active\s*=\s*false' as db_is_the_gate
+from pg_policies
+where tablename = 'members' and policyname = 'members join once, first as chief';
+```
+
+Lesson worth keeping: the first read is what makes this provable. A dashboard
+"Success" would not have told us *which* policy text was in place.
+
+**Live-data truth, re-probed:** seven submissions (*Among Us* is the Nov 17 public
+one, `Accepted`), eight members with **two pending readers** (one Hanover student
+address; one a typo duplicate of an active reader), three `chief_editor` rows (the
+demo, the owner's, and one that was not in the Nov 17 note), two ratings, one
+assignment on *The Last Ferry*.
+
+---
+
 ## Nov 18, 2026 — reading assignments (issue #6, phase 1)
 
 The other half of #6, and the thing "genre staffs" is not: a staff says who *can*
