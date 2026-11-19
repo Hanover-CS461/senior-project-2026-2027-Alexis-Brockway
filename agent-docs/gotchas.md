@@ -380,6 +380,24 @@ lands on `/reader`) — paste first, push second; (3) assigning *yourself* to a 
 allowed (the chief reads too); only the role select and the Activate button are
 disabled on your own row, because those are the two ways to lock yourself out.
 
+**The public form is the anonymous door, and a signed-in tester is on the wrong
+side of it.** The three things the submit form writes — `submissions`, `authors`,
+and the file in `manuscripts` — are granted **`to anon` only**
+(`20261013000000_init.sql`). A browser holding a login token is `authenticated`,
+so every one of those calls is refused, and the *Storage* upload fires first: that
+is why the message is the table-less variant, **"new row violates row-level
+security policy"**, where the REST calls add `for table "submissions"` and code
+`42501`. Nothing is half-written — no row, no object — so there is nothing to
+clean up, and the database is not broken. Since Nov 19 `/submit` reads `useAuth()`
+and says *"You're signed in as …"* over a **Sign out and submit** button, which
+returns the *same URL* with the form in place (the genre query survives, because
+signing out re-renders instead of navigating). Both halves are tested:
+`public-submission.spec.ts` for the visitor, `authenticated.spec.ts` for the
+member. **The probe worth keeping:** an insert that *omits a `not null` column*
+answers `23502` if RLS **passed** and `42501` if it refused — so a policy can be
+tested against the live project without writing a row (that is how this diagnosis
+was proved, and it applies to any table).
+
 ---
 
 ## 8. Docs, Jekyll, and the deploy pipeline

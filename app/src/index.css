@@ -928,6 +928,98 @@ p {
    Until now the shell was desktop-only: the nav was one flex row with no wrap,
    so on a phone the "Log out <name>" button pushed past the right edge. The
    graded demo is opened on phones, so the header stacks and the links wrap. */
+/* Letters to the writer: what was queued, and whether it has gone out. */
+.letters-box {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.letters-box h3 {
+  margin: 0 0 4px;
+}
+
+.letter-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.letter-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.letter-kind {
+  font-weight: 600;
+}
+
+.letter-state {
+  font-size: 13px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+/* Queued is work to do, so it reads as live; sent is finished, so it fades. */
+.state-queued {
+  border-color: var(--teal);
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.state-sent {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: #fff;
+}
+
+.state-failed {
+  border-color: #c0392b;
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.state-skipped {
+  border-style: dashed;
+}
+
+.letter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.letters-page {
+  max-width: 720px;
+}
+
+.letter-preview {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.letter-preview pre {
+  margin: 6px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafafa;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 720px) {
   .site-nav {
     flex-direction: column;

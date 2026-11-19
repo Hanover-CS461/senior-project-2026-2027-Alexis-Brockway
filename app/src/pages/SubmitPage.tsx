@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getGenre, generalRequirements } from '../data/genres'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import { DEFAULT_STATUS } from '../lib/statuses'
 import { formatWarning, scrubFile, storageNameFor } from '../lib/scrub'
 
@@ -31,9 +32,13 @@ const submissionSchema = z.object({
 type SubmissionFormValues = z.input<typeof submissionSchema>
 
 function SubmitPage() {
+  const { session, loading, member, signOut } = useAuth()
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Signing out is a network round trip (the token is revoked, not just
+  // forgotten), so the button says so instead of looking dead on a slow phone.
+  const [signingOut, setSigningOut] = useState(false)
   const [formatHint, setFormatHint] = useState<string | null>(null)
   const [scrubNote, setScrubNote] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
@@ -58,6 +63,64 @@ function SubmitPage() {
 
   if (!genre) {
     return <Navigate to="/submit/genre" replace />
+  }
+
+  // The public form is the anonymous door. The three policies it writes through
+  // — "anon can insert submissions", "anon can insert authors", "anon can
+  // upload manuscripts" — are granted to `anon` only, so a browser holding a
+  // login token gets back "new row violates row-level security policy" from the
+  // storage upload before it ever reaches the form. Postgres is right and the
+  // message explains nothing, so say it in the page instead: a writer never
+  // needs an account, and a signed-in reader or editor could otherwise open
+  // their own piece in the queue. Signing out lands back on this same URL with
+  // the form in place — no navigation, no lost genre.
+  if (loading) {
+    return (
+      <div className="page">
+        <h1>{genre.name} Submission</h1>
+        <p className="hint">Checking your session…</p>
+      </div>
+    )
+  }
+
+  if (session) {
+    const signedInAs = member?.name ?? session.user.email ?? 'your account'
+    return (
+      <div className="page">
+        <h1>{genre.name} Submission</h1>
+        <div className="rules-block">
+          <h2>You're signed in</h2>
+          <p>
+            You're signed in as {signedInAs}. The submission form is the public
+            door and only accepts visitors who aren't signed in — a writer never
+            needs an account, and a signed-in reader or editor could otherwise
+            open their own piece in the queue.
+          </p>
+          <button
+            type="button"
+            className="btn"
+            disabled={signingOut}
+            onClick={async () => {
+              setSigningOut(true)
+              try {
+                await signOut()
+              } finally {
+                setSigningOut(false)
+              }
+            }}
+          >
+            {signingOut ? 'Signing out…' : 'Sign out and submit'}
+          </button>
+          <p className="hint">
+            Or use a private window, which leaves your staff session exactly as
+            it is.
+          </p>
+        </div>
+        <p className="back-link">
+          <Link to="/">← Back to home</Link>
+        </p>
+      </div>
+    )
   }
 
   const onSubmit = async (values: SubmissionFormValues) => {
@@ -124,8 +187,8 @@ function SubmitPage() {
       <div className="page">
         <h1>Submission received</h1>
         <p className="lede">
-          Thanks! Once email is wired up, a status link will be sent here. For
-          now, this confirms the form works and validates.
+          Thanks! Your piece is with the editors. We will write to the email
+          address you gave us when there is a decision.
         </p>
         {scrubNote && <p className="hint">{scrubNote}</p>}
         <p className="back-link">

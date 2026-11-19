@@ -185,7 +185,7 @@ list with owners.
 | `app/supabase/demo-reset.sql` | Current | Paste-to-undo for a vandalised demo (see §7) |
 | `app/e2e/` | Current | Playwright specs: public submission, blind review, editor gating, authenticated roles, password recovery, password toggle, metadata scrubbing |
 | `app/supabase/tests/rls.test.sql` | Current | pgTAP policy tests (needs Docker) |
-| `app/supabase/functions/` | Planned | Edge Functions — upload routing, decision letters |
+| `app/supabase/functions/` | **Current** | `send-letters/` — the only code that holds the Resend key: drains `email_outbox`, `dryRun` previews the text. Setup in its `README.md`. Upload routing still planned |
 | `docs/` | **Live site** | Jekyll site deployed to GitHub Pages; `index.md` links the app at `/app/` |
 | `scripts/acceptance.sh` | Current | The deadline check in one command: suites, live URLs, auth probes, keep-alive, one verdict (read-only) |
 | `docs/handoff.md` | Live | One page for the club: what they inherit, the pause ritual, the reset lever |
@@ -358,14 +358,23 @@ Repo: `Hanover-CS461/senior-project-2026-2027-Alexis-Brockway`.
   be **deleted** — not rotated, because the passwords are in git history.
   `member_audit.target_user_id` is `references auth.users(id)` without `ON DELETE
   CASCADE`, so audit rows naming a demo user must be removed first.
-- **#8 — Send real email.** Phase 0 is Resend as Supabase Auth's SMTP (the
+- **#8 — Send real email.** *Phase 0* is Resend as Supabase Auth's SMTP (the
   `[auth.email.smtp]` block is already commented into `config.toml`) — blocked on the
   club's DNS for SPF/DKIM. The built-in mailer *does* deliver (proved Nov 19 to one real
   inbox, link and all), so this is now about volume and spam placement rather than a
-  broken flow. Phase 1 is decision letters via an `email_outbox` table
-  drained by an Edge Function, with `unique (submission_id, kind)` so a double-send is
-  impossible; deciding and notifying must stay separate acts because a decision can be
-  undone.
+  broken flow.
+  *Phase 1 shipped Nov 20*: `20261120000000_email_outbox.sql` (table + RLS + the receipt
+  trigger), `send-letters` Edge Function, the Letters panel on `/editor/:id`, and a
+  Letters tab on the dashboard. A receipt is queued on submit, **Accepted and Rejected
+  queue a letter, Hold queues nothing** — `email_outbox.kind` refuses `'hold'`, so that
+  is a database rule. Deciding and sending stay separate acts, which is what lets an
+  undo withdraw an unsent letter (the one narrow DELETE policy in the schema: unsent
+  rows only). The function holds the only Resend key and asks `is_editor()` with the
+  *caller's* token before the service-role client exists. **Still open:** the three
+  letter texts are drafts in a CW-major's voice, Resend needs the club's DNS before it
+  can write to anyone but the account holder (send from `onboarding@resend.dev` until
+  then), and the suites never press Send — a send is a real email, so `dryRun` is how
+  the wording is checked.
 
 **Shared blocker (#6, #7 phase 2):** an assignment and an account deletion are both
 *writes*, and the suites are read-only. Decide the throwaway-account / cleanup strategy
@@ -412,6 +421,9 @@ Numbers are stable and cited from code — full reasoning in `agent-docs/decisio
     (Nov 18).
 23. **A real submission outranks a tidy demo** (Nov 19) — "Among Us" stays `Accepted`
     because a destructive cleanup of a real writer's row is worse than an untidy demo.
+24. **A letter is queued, not sent; Hold says nothing** (Nov 20) — deciding earns a row
+    in `email_outbox`, pressing Send is a separate act so an undo can still withdraw it,
+    and `kind` refuses `'hold'` because Hold is a delay, not an answer.
 
 ---
 

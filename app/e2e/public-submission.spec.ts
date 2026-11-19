@@ -18,4 +18,15 @@ test('a writer can find the right form for a genre', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Continue to Fiction form' }).click()
   await expect(page).toHaveURL(/\/submit\?genre=fiction/)
+
+  // The anon half of the same truth the authenticated spec checks from the
+  // other side: a visitor who is not signed in gets the form, because the
+  // public insert policies are granted to `anon`. This half runs in CI, where
+  // the authenticated spec is skipped. Read-only — nothing is submitted.
+  await expect(
+    page.getByRole('button', { name: 'Submit', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: "You're signed in" }),
+  ).toHaveCount(0)
 })

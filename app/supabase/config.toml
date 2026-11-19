@@ -391,6 +391,16 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# ------------------------------------------------------------
+# send-letters (issue #8): drains public.email_outbox and posts each letter
+# to Resend. verify_jwt stays on, because the caller's own token is what lets
+# the function ask Postgres `is_editor()` before the service-role client is
+# ever created. Turning this off would make the function world-callable.
+# ------------------------------------------------------------
+[functions.send-letters]
+enabled = true
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

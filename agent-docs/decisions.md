@@ -111,6 +111,31 @@ deliberately and record the new one — don't quietly edit the old text.
     work on data nobody typed by hand. The rule that follows: **`demo-reset.sql` only
     touches seed UUIDs**, and no agent deletes a non-seed row on assumption. Demo tidiness
     is not worth one real manuscript.
+24. **A letter is queued, not sent — and Hold says nothing** (Nov 20). Issue #8's
+    shape, settled while building it. Four parts:
+    *Deciding and notifying are separate acts.* Recording a decision writes a row to
+    `email_outbox`; an editor pressing **Send** is what puts mail on the wire. Without
+    that split, decision 13's undo would be a lie — you cannot unsend an email. So an
+    undo withdraws an unsent letter (the one narrow DELETE policy in the schema:
+    `is_editor() and sent_at is null`) and, if one already went, says so instead of
+    pretending the undo was clean.
+    *Hold sends nothing.* A writer hears a receipt, an acceptance, or a rejection, and
+    nothing else. The reference for the letter's voice does not exist yet — writing "we
+    are still considering it" raises a question the club cannot promise to answer on any
+    clock — so the column simply refuses `'hold'`, and turning Hold on later is a
+    migration plus a decision, not a UI change.
+    *The row carries no identity.* No recipient and no name: the address is read from
+    `authors` at send time. A leaked row leaks "this submission has a letter waiting",
+    which is outcome data a reader still must not see — hence `is_editor()` on SELECT.
+    *The receipt is a trigger, and the words never reach the browser.* Anon must never
+    get INSERT on a mail queue, so a security-definer trigger on `authors` queues the
+    receipt; a spammer who spams the form can only email themselves, because the letter
+    always goes to that row's own address. And the letter text lives only in the Edge
+    Function — previews come back from `dryRun` — so a reader opening devtools cannot
+    read the rejection letter's wording.
+    Cost, stated plainly: mail is manual (no cron), and the free-tier pause means a
+    scheduler would be one more thing to notice going quiet. For a club that decides a
+    hundred pieces a season, pressing Send is not the bottleneck.
 
 ---
 

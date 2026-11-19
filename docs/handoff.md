@@ -79,8 +79,14 @@ editor and it goes back to how it looked on day one.
 
 ## What is not built yet
 
-- **Decision letters.** The six statuses work and are enforced by the database,
-  but nothing emails an author. That needs Resend wired into an Edge Function.
+- **Decision letters.** The six statuses work and are enforced by the database.
+  Recording a decision now queues a letter for the writer, and the Letters tab can
+  send it through Resend — but sending is a separate button on purpose, so an undo
+  can still withdraw a letter that has not gone out. **Hold sends nothing.** Two
+  things are still missing: the three letter texts are templates that should be
+  rewritten in the journal's own voice, and Resend needs the club's DNS (SPF/DKIM)
+  before it can post to anyone but the account holder. Until then, letters can be
+  previewed and sent to your own inbox only.
 - **Invite codes.** Sign-up is open: anyone who finds the page can create an
   account. An account now starts **inactive**, so it can read nothing until the
   Chief Editor activates it from the Staff tab — that is the approval step, and

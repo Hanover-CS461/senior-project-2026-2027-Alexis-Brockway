@@ -147,6 +147,28 @@ test.describe('authenticated roles', () => {
     ).toBeVisible()
   })
 
+  test('the chief editor can open the letter queue', async ({ page }) => {
+    await signIn(
+      page,
+      process.env.TEST_CHIEF_EMAIL!,
+      process.env.TEST_CHIEF_PASSWORD!,
+    )
+    await expect(
+      page.getByRole('heading', { name: 'Editor dashboard' }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Letters' }).click()
+    await expect(page.getByRole('heading', { name: 'Letters' })).toBeVisible()
+
+    // Read-only: nothing here presses Send, because a send is a real email to
+    // a real writer. This proves the door opens — either the queue renders or
+    // the page says plainly that the outbox migration has not been pasted
+    // (which is the state a fresh clone is in).
+    await expect(
+      page.getByText(/Nothing waiting to go out|not set up yet/),
+    ).toBeVisible()
+  })
+
   test('the chief editor can export the submissions as CSV', async ({
     page,
   }) => {
@@ -172,5 +194,38 @@ test.describe('authenticated roles', () => {
       /^kennings-submissions-\d{4}-\d{2}-\d{2}\.csv$/,
     )
     await expect(page.getByText(/Downloaded kennings-submissions-/)).toBeVisible()
+  })
+
+  test('a signed-in member is told to sign out before submitting', async ({
+    page,
+  }) => {
+    await signIn(
+      page,
+      process.env.TEST_READER_EMAIL!,
+      process.env.TEST_READER_PASSWORD!,
+    )
+
+    await page.goto('/submit?genre=fiction')
+
+    // The public form writes through policies granted to `anon` only, so a
+    // signed-in visitor is refused by the database with "new row violates
+    // row-level security policy" (42501). The page has to say that in words,
+    // and it must not render a form whose Submit button can only fail.
+    await expect(
+      page.getByRole('heading', { name: "You're signed in" }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Submit', exact: true }),
+    ).toHaveCount(0)
+
+    // Signing out is the whole fix, and it must not lose the genre: the form
+    // comes back on the same URL. Read-only — nothing is submitted.
+    await page.getByRole('button', { name: 'Sign out and submit' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Fiction Submission' }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Submit', exact: true }),
+    ).toBeVisible()
   })
 })

@@ -132,6 +132,23 @@ it deliberately leaves the seventh alone.
 ---
 
 
+## Fixed Nov 19 — the submit form now explains a signed-in tester
+
+A writer testing from a browser still signed in as staff got *"new row violates
+row-level security policy"*: the form's three writes are granted to `anon` only,
+so the storage upload was refused before anything else ran. **Nothing was
+half-written** — no row, no object, nothing to clean up — and no policy changed.
+`/submit` now reads the session and says *"You're signed in as …"* over a **Sign
+out and submit** button, which puts the form back on the *same* URL (the genre
+survives). Two e2e assertions cover both halves: the visitor in
+`public-submission.spec.ts` (runs in CI) and the member in
+`authenticated.spec.ts`. `npm test` **130/130**, `npm run test:e2e` **21/21**,
+lint and `tsc -b` clean. Written up in `agent-docs/gotchas.md` §7, including the
+probe trick that proved it (`23502` = RLS passed, `42501` = RLS refused, so a
+policy can be tested without writing a row).
+
+---
+
 ## Shipped today (committed and deployed)
 
 Nov 18 — the two halves of the editor's people-work:

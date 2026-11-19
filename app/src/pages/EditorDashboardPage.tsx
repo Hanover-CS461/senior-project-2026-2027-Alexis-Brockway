@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import MemberManager from '../components/MemberManager'
 import ExportPanel from '../components/ExportPanel'
+import LetterOutbox from '../components/LetterOutbox'
 import { STATUSES, badgeClass } from '../lib/statuses'
 
 type Filter = 'All' | string
 
-type View = 'queue' | 'staff' | 'export'
+type View = 'queue' | 'letters' | 'staff' | 'export'
 
 const statuses: Filter[] = ['All', ...STATUSES.map((s) => s.value)]
 
@@ -89,6 +90,13 @@ function EditorDashboardPage() {
         </button>
         <button
           type="button"
+          className={`tab ${view === 'letters' ? 'active' : ''}`}
+          onClick={() => setView('letters')}
+        >
+          Letters
+        </button>
+        <button
+          type="button"
           className={`tab ${view === 'staff' ? 'active' : ''}`}
           onClick={() => setView('staff')}
         >
@@ -103,7 +111,9 @@ function EditorDashboardPage() {
         </button>
       </div>
 
-      {view === 'staff' ? (
+      {view === 'letters' ? (
+        <LetterOutbox />
+      ) : view === 'staff' ? (
         <MemberManager />
       ) : view === 'export' ? (
         <ExportPanel />

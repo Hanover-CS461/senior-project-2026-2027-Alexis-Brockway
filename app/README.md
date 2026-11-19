@@ -143,7 +143,13 @@ maintain after graduation.
 - Reader notes are shown to editors without attribution, because only the Chief
   Editor may read the `members` table. The export follows the same rule: the
   scores file carries the notes but no reader column.
-- Decision letters and email (Resend) are not built.
+- **Decision letters are queued but not switched on.** `email_outbox` (migration
+  `20261120000000`) now records a receipt on submit and a letter when an editor records
+  Accepted or Rejected; Hold sends nothing, and `kind` refuses `'hold'`. The
+  `send-letters` Edge Function drains the queue through Resend, but nothing leaves the
+  building until an editor presses **Send** on the Letters tab, and Resend still needs
+  the club's DNS before it can write to real writers (see
+  `app/supabase/functions/send-letters/README.md`).
 - Auth email rides Supabase's built-in demo mailer, which is rate-limited to a
   handful per hour and often lands in spam. **Delivery was proven on Nov 19, 2026:** a
   password-reset mail reached a real Gmail inbox and its link opened the change-password
