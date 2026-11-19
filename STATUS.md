@@ -51,6 +51,7 @@ Run from this machine, read-only; nothing about the app changed to get these.
 | Reader-approval policy (`pg_policies`, pasted Nov 19) | `db_is_the_gate` → **`true`** — the database, not just the app, refuses a self-approving sign-up |
 | Password-reset email delivery (Nov 19) | **arrived in a real inbox, link opened the change-password form** ✅ |
 | Storage probe objects (Nov 19) | `probe.txt` and `samples/probe-test.txt` **deleted**, proved with the chief's bucket listing; six seed manuscripts intact |
+| Phone-sized layout (Nov 19) | the header clipped 30px past the right edge at 390px; media queries added, e2e still **19/19**, live screenshot now has **0** overflow |
 
 What the deployed walkthrough proved (signed in through the published demo buttons):
 
@@ -65,6 +66,10 @@ What the deployed walkthrough proved (signed in through the published demo butto
   manuscript/notes/score controls render; `/editor` shows the denial with the
   "Go to your reader queue" link (the door is a message, not a redirect).
 - The only console noise is the Pages fallback's own 404 — the hack working.
+- **At phone size (390px)** the same reader view loads cold with **zero horizontal
+  overflow** after the Nov 19 media-query fix, and the screenshot at
+  `docs/assets/reader-queue.png` carries **no author name** — it is linked from the
+  club-facing handoff page as the visible proof of the blind-review claim.
 
 ---
 

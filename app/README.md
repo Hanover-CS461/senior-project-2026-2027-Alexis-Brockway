@@ -77,7 +77,10 @@ reader's blindness, the CSV download, and a refresh on a deep editor link),
 ## Demo access
 
 Sample data is seeded (`app/supabase/seed.sql`), so the queue and reader flow have
-something to show. Every submission, author and manuscript in it is fictional.
+something to show. Every seeded submission, author and manuscript is fictional —
+with one exception: **"Among Us" (Poetry), submitted Nov 17, 2026 through the public
+form, is a real submission with a real author row and currently reads `Accepted`.** Do
+not delete it, and note that `demo-reset.sql` deliberately leaves it alone.
 
 These two accounts are also listed on the sign-in page, so a visitor can look around
 without creating an account. They are throwaway accounts — publishing them costs
@@ -91,8 +94,8 @@ they must keep their roles.
 | Reader | `kennings.reader@example.com` | `KenningsTest2026!` |
 
 Because those logins are public, so is the power to change a decision, wipe a
-score, or demote a role. The data is fictional, so it costs nothing — but it does
-make the demo drift, and demoting the demo Chief Editor breaks the local
+score, or demote a role. The seeded data is fictional, so that costs nothing — but
+it does make the demo drift, and demoting the demo Chief Editor breaks the local
 browser tests. `app/supabase/demo-reset.sql` is the undo: paste it into the
 Supabase SQL editor and the six sample statuses, the ratings, and both demo roles
 go back to their seeded values.

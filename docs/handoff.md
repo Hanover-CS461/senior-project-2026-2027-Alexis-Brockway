@@ -23,11 +23,25 @@ logins — a **Chief Editor** and a **Reader**. Use them to look around. They ar
 deliberate: they buy exactly the access a real reader or editor has, and nothing
 more.
 
-## Everything in it is fictional
+Here is what the club's readers see — a phone-sized screenshot of the live app,
+signed in as the demo Reader:
 
-Every submission, author name, bio and manuscript currently in the app is sample
-data created in October 2026. Nothing in there belongs to a real writer, so it is
-safe to click, score, accept, reject and break.
+<img src="assets/reader-queue.png" width="320" alt="The reader queue on a phone: titles, genres and statuses, with no author names">
+
+Titles, genres, dates, statuses. No author name, no email, no bio — and not
+because the page hides them. The database has no rule that lets a reader read the
+`authors` table at all.
+
+## Everything in it is fictional — with one exception
+
+Every seeded submission, author name, bio and manuscript was created as sample
+data in October 2026, so it is safe to click, score, accept, reject and break.
+
+**The exception is "Among Us" (Poetry), submitted on Nov 17, 2026 through the
+public form, and currently `Accepted`.** It came from the open form, so treat it
+as a real writer's manuscript: do not delete it, do not reset it with
+`demo-reset.sql` (that script deliberately leaves it alone), and do not pretend
+its decision is a sample.
 
 ## What you inherit
 
@@ -58,7 +72,8 @@ GitHub Action pings it every three days to prevent that.
 ## If the demo looks wrong
 
 Because the demo login is public, a visitor can change a decision, wipe a score,
-or demote the demo accounts. Nothing is lost — it is sample data — but the app
+or demote the demo accounts. Nothing is lost — the seeded pieces are sample data
+(one real submission, "Among Us", is deliberately left alone) — but the app
 starts looking odd. Paste `app/supabase/demo-reset.sql` into the Supabase SQL
 editor and it goes back to how it looked on day one.
 

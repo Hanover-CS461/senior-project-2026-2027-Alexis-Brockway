@@ -2,9 +2,10 @@
 
 **A Custom Submission Manager for a College Literary Magazine**
 
-**[Open the live app →](app/)** — it runs on sample data. The sign-in page
-publishes two throwaway accounts (a Chief Editor and a Reader), so there is
-nothing to create and nothing to install. Start at **Submit**, then sign in as
+**[Open the live app →](app/)** — it runs on seeded sample data, plus one real
+submission that arrived through the form. The sign-in page publishes two throwaway
+accounts (a Chief Editor and a Reader), so there is nothing to create and nothing to
+install. Start at **Submit**, then sign in as
 the Reader to see the blind queue, then as the Chief Editor to see the
 full view, the ratings, and the CSV export.
 
