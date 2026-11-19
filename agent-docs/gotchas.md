@@ -389,7 +389,7 @@ is why the message is the table-less variant, **"new row violates row-level
 security policy"**, where the REST calls add `for table "submissions"` and code
 `42501`. Nothing is half-written — no row, no object — so there is nothing to
 clean up, and the database is not broken. Since Nov 19 `/submit` reads `useAuth()`
-and says *"You're signed in as …"* over a **Sign out and submit** button, which
+and says *"You can't submit while signed in"* over a **Sign out and submit** button, which
 returns the *same URL* with the form in place (the genre query survives, because
 signing out re-renders instead of navigating). Both halves are tested:
 `public-submission.spec.ts` for the visitor, `authenticated.spec.ts` for the

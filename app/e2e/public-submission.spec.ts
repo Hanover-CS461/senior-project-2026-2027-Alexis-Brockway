@@ -27,6 +27,6 @@ test('a writer can find the right form for a genre', async ({ page }) => {
     page.getByRole('button', { name: 'Submit', exact: true }),
   ).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: "You're signed in" }),
+    page.getByRole('heading', { name: "You can't submit while signed in" }),
   ).toHaveCount(0)
 })

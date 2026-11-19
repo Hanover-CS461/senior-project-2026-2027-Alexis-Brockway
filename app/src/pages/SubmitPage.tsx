@@ -89,12 +89,12 @@ function SubmitPage() {
       <div className="page">
         <h1>{genre.name} Submission</h1>
         <div className="rules-block">
-          <h2>You're signed in</h2>
+          <h2>You can't submit while signed in</h2>
           <p>
-            You're signed in as {signedInAs}. The submission form is the public
-            door and only accepts visitors who aren't signed in — a writer never
-            needs an account, and a signed-in reader or editor could otherwise
-            open their own piece in the queue.
+            You're signed in as {signedInAs}. To submit as a writer you can't be
+            signed in as an editor or reader — otherwise your own piece would
+            land in the queue you read. Sign out below and the form comes back
+            on this same page.
           </p>
           <button
             type="button"

@@ -212,7 +212,7 @@ test.describe('authenticated roles', () => {
     // row-level security policy" (42501). The page has to say that in words,
     // and it must not render a form whose Submit button can only fail.
     await expect(
-      page.getByRole('heading', { name: "You're signed in" }),
+      page.getByRole('heading', { name: "You can't submit while signed in" }),
     ).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Submit', exact: true }),
