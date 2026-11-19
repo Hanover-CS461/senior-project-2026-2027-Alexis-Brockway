@@ -239,18 +239,27 @@ history.
 
 ## What is left
 
-### Needs your hands (four small things, no code)
+### Monday, Nov 23 — freeze, then evidence
 
-> **Phase 0, Phase 1 and the email proof are done (Nov 19).** The reader-approval
-> migration is applied and proved (`db_is_the_gate` → `true`). The Hanover student
-> reader was approved, and the approval is visible in `member_audit`. "Among Us" stays
-> `Accepted` on purpose — it is the end-to-end proof, not an accident. The probe objects
-> are deleted, and a password-reset mail **reached a real inbox and its link worked**.
+1. **Code freeze.** Docs only after Monday. No dependency bumps, no workflow-action
+   bumps.
+2. **Run the acceptance test and paste its output here**, so the last entry before the
+   deadline is evidence, not a claim:
 
-1. **Open the app on a phone, on cellular** — every check so far ran from one
-   machine. Thirty seconds, and it is the only honest proof of "public".
-2. **Take one screenshot of the reader view** with no author name on it — the
-   artifact that makes the security claim legible in a demo.
+   ```bash
+   ./scripts/acceptance.sh
+   ```
+
+   It runs the two suites, the three live URLs, both auth probes and the last
+   keep-alive run, then prints one verdict. Read-only, so it can be re-run freely —
+   including on the morning of Nov 24.
+
+### Anything still waiting on you? Only after the deadline
+
+Every hands-on item from the finish-line plan is closed: the SQL policy check, the two
+live decisions, the probe objects, the email proof, the phone check, and the
+screenshot (now `docs/assets/reader-queue.png`, linked from the club handoff page).
+What remains is the post-deadline list below.
 
 ### Open issues, in the order I would defend
 

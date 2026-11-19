@@ -109,6 +109,7 @@ list with owners.
 | `npm run db:push` / `db:push:dry` | Apply migrations to the linked project — **unavailable until `db:link` works** |
 | `npm run db:new -- <name>` | Create a new empty migration file |
 | `npm run db:start` / `db:stop` / `db:reset` | Local stack — needs Docker, which is not installed |
+| `./scripts/acceptance.sh` | **One-command deadline check**: the two suites, three live URLs, both auth probes, last keep-alive run, one verdict. Read-only; `--no-suites` skips the ~1 min of tests |
 
 - **Database changes are code now**, but they reach production by paste. The schema
   lives in `app/supabase/migrations/` (timestamped, applied in order) and settings in
