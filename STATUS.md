@@ -115,9 +115,9 @@ the seed file describes:
 - **Seed statuses are back where the seed says.** The Nov 17 drift was reverted by
   `demo-reset.sql`: *The Last Ferry* is `In review`, *Porcelain* is `Shortlist`.
 - **Eight member rows, one pending.** The pending one is the owner's own second signup
-  (`abrockwaya@gmail.com`) — #7's cleanup, not a stranger. The `hanover.edu` student
-  address that was waiting was **approved Nov 19**, and proved from outside:
-  `member_audit` shows `reactivate`, `false → true`, 08:50 UTC.
+  (a `gmail.com` address under their own name) — #7's cleanup, not a stranger. The
+  `hanover.edu` student address that was waiting was **approved Nov 19**, and proved from
+  outside: `member_audit` shows `reactivate`, `false → true`, 08:50 UTC.
 - **Three rows hold `chief_editor`**: the published demo account, the owner's own
   second account (confirmed Nov 17), and one more personal address that was **not**
   in the Nov 17 note. Anyone with that role can read `authors`, so confirm whose it
